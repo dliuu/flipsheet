@@ -1,8 +1,11 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { createProperty, uploadPropertyPhotos } from '../../lib/database';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function CreateListingPage() {
+  const { user, signUp } = useAuth();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -22,6 +25,7 @@ export default function CreateListingPage() {
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [signupData, setSignupData] = useState({
     email: '',
     phoneNumber: '',
@@ -78,28 +82,105 @@ export default function CreateListingPage() {
     fileInputRef.current?.click();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
-    console.log('Photos:', photos);
     
-    // Prefill signup form with existing data
-    setSignupData({
-      email: formData.contactEmail,
-      phoneNumber: formData.phoneNumber,
-      password: '',
-      confirmPassword: ''
-    });
-    
-    // Show modal
-    setShowModal(true);
+    if (!user) {
+      // Prefill signup form with existing data
+      setSignupData({
+        email: formData.contactEmail,
+        phoneNumber: formData.phoneNumber,
+        password: '',
+        confirmPassword: ''
+      });
+      
+      // Show modal
+      setShowModal(true);
+      return;
+    }
+
+    // User is authenticated, proceed with property creation
+    await submitProperty();
   };
 
-  const handleSignupSubmit = (e: React.FormEvent) => {
+  const submitProperty = async () => {
+    if (!user) return;
+
+    setIsSubmitting(true);
+    
+    try {
+      // Create property
+      const property = await createProperty({
+        title: formData.title,
+        description: formData.description,
+        address: formData.address,
+        asking_price: parseFloat(formData.askingPrice) || undefined,
+        rehab_value: parseFloat(formData.rehabValue) || undefined,
+        rehab_cost: parseFloat(formData.rehabCost) || undefined,
+        potential_profit: parseFloat(formData.potentialProfit) || undefined,
+        bedrooms: parseFloat(formData.bedrooms) || undefined,
+        bathrooms: parseFloat(formData.bathrooms) || undefined,
+        square_footage: parseInt(formData.squareFootage) || undefined,
+        lot_size: parseInt(formData.lotSize) || undefined,
+        contact_email: formData.contactEmail,
+        phone_number: formData.phoneNumber
+      });
+
+      // Upload photos if any
+      if (photos.length > 0) {
+        await uploadPropertyPhotos(property.id, photos);
+      }
+
+      // Show success message
+      alert('Property listed successfully!');
+      
+      // Reset form
+      setFormData({
+        title: '',
+        description: '',
+        address: '',
+        askingPrice: '',
+        rehabValue: '',
+        rehabCost: '',
+        potentialProfit: '',
+        bedrooms: '',
+        bathrooms: '',
+        squareFootage: '',
+        lotSize: '',
+        contactEmail: '',
+        phoneNumber: ''
+      });
+      setPhotos([]);
+      setPhotoUrls([]);
+      
+    } catch (error) {
+      console.error('Error creating property:', error);
+      alert('Error creating property. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Signup submitted:', signupData);
-    // TODO: Add signup logic
-    setShowModal(false);
+    
+    if (signupData.password !== signupData.confirmPassword) {
+      alert('Passwords do not match');
+      return;
+    }
+
+    try {
+      await signUp(signupData.email, signupData.password, signupData.phoneNumber);
+      setShowModal(false);
+      alert('Account created successfully! You can now list your property.');
+      
+      // Automatically submit the property after successful signup
+      await submitProperty();
+      
+    } catch (error) {
+      console.error('Error signing up:', error);
+      alert('Error creating account. Please try again.');
+    }
   };
 
   const closeModal = () => {
@@ -114,6 +195,11 @@ export default function CreateListingPage() {
           <h1 className="text-3xl md:text-4xl font-bold text-[#121416] leading-tight">
             List Your Off-Market Property
           </h1>
+          {user && (
+            <p className="text-sm text-[#6a7681] mt-2">
+              Welcome back, {user.email}
+            </p>
+          )}
         </div>
 
         {/* Form */}
@@ -130,6 +216,7 @@ export default function CreateListingPage() {
               onChange={handleInputChange}
               placeholder="e.g., Charming 3-Bedroom Home in Willow Creek"
               className="w-full h-14 px-4 rounded-xl bg-[#f1f2f4] text-[#121416] placeholder:text-[#6a7681] text-base font-normal focus:outline-none focus:ring-0 border-none"
+              required
             />
           </div>
 
@@ -160,6 +247,7 @@ export default function CreateListingPage() {
               onChange={handleInputChange}
               placeholder="123 Oak Street, Anytown, CA"
               className="w-full h-14 px-4 rounded-xl bg-[#f1f2f4] text-[#121416] placeholder:text-[#6a7681] text-base font-normal focus:outline-none focus:ring-0 border-none"
+              required
             />
           </div>
 
@@ -381,9 +469,10 @@ export default function CreateListingPage() {
           <div>
             <button
               type="submit"
-              className="w-full h-12 px-5 rounded-full bg-[#dce8f3] text-[#121416] text-base font-bold tracking-[0.015em] hover:bg-[#c5d9e8] transition-colors"
+              disabled={isSubmitting}
+              className="w-full h-12 px-5 rounded-full bg-[#dce8f3] text-[#121416] text-base font-bold tracking-[0.015em] hover:bg-[#c5d9e8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              List Property
+              {isSubmitting ? 'Creating Property...' : (user ? 'List Property' : 'List Property (Sign Up Required)')}
             </button>
           </div>
         </form>
