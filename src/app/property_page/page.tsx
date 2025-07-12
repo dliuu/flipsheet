@@ -71,6 +71,15 @@ export default function PropertyPage() {
     "https://lh3.googleusercontent.com/aida-public/AB6AXuAFmvBABkK9aHpikVXbj0t6FCa5EjpJ0OH8G3Rp8JLyvBZL7yDvavjPQW2MSzcOk8UV6AZiuLYWD3YwQVjymheMIrVBSiz235gH3ffPawPEsMMY7zSTq8VxyubwQGc32cuKTZqUz9F5kj8VTaJojbuO099BLBo9Jo_4tSHRviMIYz-8fAI99oCaD4PE79JUjs3Y9fWqyh8yDslk9OaVsCN_24WzI21ckxcMJ0POFmU0cNTpx8MtlFa5i-wseKliDPKZE91Wd4pKOGu0"
   ];
 
+  // Auto-rotate images every 7 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSelectedImage((prevIndex) => (prevIndex + 1) % propertyImages.length);
+    }, 7000);
+
+    return () => clearInterval(interval);
+  }, [propertyImages.length]);
+
   const mainImage = "https://lh3.googleusercontent.com/aida-public/AB6AXuCF9J9NlUJ2yFzF_WxdWs9_cRZwyEGofymoUrl6Rq7TnyXBh6SSvNMdwpFO2l2ZZSs10DT9sP1NeQwPWkMgluVlfogKbQTrkSgOFBczXbXlTjlQl46fsOmcl0iAMwy_JZx9ZgJ36FA-nq0TBUXroEY8ghrVFEWdUGHdIIm3j8uQCNDPL12x4dbXr2G5qGamt6HW5vh3vpUi2oX9yWjKUcQiacYhp7ZN-L7I-uiqOS9UEW41oKO1wxfSEk7DMRw2ODWxS9fyfERy27-4";
 
   return (
@@ -100,7 +109,7 @@ export default function PropertyPage() {
              <div className="flex w-full grow bg-white @container py-3">
                <div className="w-full gap-1 overflow-hidden bg-white @[480px]:gap-2 aspect-[3/2] flex">
                  <div
-                   className="w-full bg-center bg-no-repeat bg-cover aspect-auto rounded-none flex-1"
+                   className="w-full bg-center bg-no-repeat bg-cover aspect-auto rounded-none flex-1 transition-all duration-700 ease-in-out"
                    style={{backgroundImage: `url("${propertyImages[selectedImage]}")`}}
                  ></div>
                </div>
@@ -117,33 +126,83 @@ export default function PropertyPage() {
               resale. The property features a spacious layout, a large backyard, and is close to schools and amenities.
             </p>
 
+                        {/* Property Details */}
+            <h3 className="text-[#111518] text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4">Property Details</h3>
+            <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="pb-2">
+                <p className="text-[#60768a] text-sm font-normal leading-normal mb-1">Address</p>
+                <p className="text-[#111518] text-sm font-normal leading-normal">123 Main Street, Anytown, CA 90210</p>
+              </div>
+              <div className="pb-2">
+                <p className="text-[#60768a] text-sm font-normal leading-normal mb-1">Type of Home</p>
+                <p className="text-[#111518] text-sm font-normal leading-normal">Single Family</p>
+              </div>
+              <div className="pb-2">
+                <p className="text-[#60768a] text-sm font-normal leading-normal mb-1">Bedrooms</p>
+                <p className="text-[#111518] text-sm font-normal leading-normal">3</p>
+              </div>
+              <div className="pb-2">
+                <p className="text-[#60768a] text-sm font-normal leading-normal mb-1">Bathrooms</p>
+                <p className="text-[#111518] text-sm font-normal leading-normal">2.5</p>
+              </div>
+              <div className="pb-2">
+                <p className="text-[#60768a] text-sm font-normal leading-normal mb-1">Interior Square Footage</p>
+                <p className="text-[#111518] text-sm font-normal leading-normal">2,150 sq ft</p>
+              </div>
+              <div className="pb-2">
+                <p className="text-[#60768a] text-sm font-normal leading-normal mb-1">Lot Square Footage</p>
+                <p className="text-[#111518] text-sm font-normal leading-normal">8,500 sq ft</p>
+              </div>
+            </div>
+
+
             {/* Key Metrics */}
             <h3 className="text-[#111518] text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4">Key Metrics</h3>
-            <div className="p-4 grid grid-cols-[20%_1fr] gap-x-6">
-              <div className="col-span-2 grid grid-cols-subgrid border-t border-t-[#dbe1e6] py-5">
-                <p className="text-[#60768a] text-sm font-normal leading-normal">Asking Price</p>
+            <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="pb-2">
+                <p className="text-[#60768a] text-sm font-normal leading-normal mb-1">Asking Price</p>
                 <p className="text-[#111518] text-sm font-normal leading-normal">$250,000</p>
               </div>
-              <div className="col-span-2 grid grid-cols-subgrid border-t border-t-[#dbe1e6] py-5">
-                <p className="text-[#60768a] text-sm font-normal leading-normal">Expected ARV</p>
+              <div className="pb-2">
+                <p className="text-[#60768a] text-sm font-normal leading-normal mb-1">Est Closing Costs</p>
+                <p className="text-[#111518] text-sm font-normal leading-normal">$10,000</p>
+              </div>
+              <div className="pb-2">
+                <p className="text-[#60768a] text-sm font-normal leading-normal mb-1">Est After Repair Value</p>
                 <p className="text-[#111518] text-sm font-normal leading-normal">$400,000</p>
               </div>
-              <div className="col-span-2 grid grid-cols-subgrid border-t border-t-[#dbe1e6] py-5">
-                <p className="text-[#60768a] text-sm font-normal leading-normal">Expected Rehab Cost</p>
+              <div className="pb-2">
+                <p className="text-[#60768a] text-sm font-normal leading-normal mb-1">Est As-Is Value</p>
+                <p className="text-[#111518] text-sm font-normal leading-normal">$275,000</p>
+              </div>
+              <div className="pb-2">
+                <p className="text-[#60768a] text-sm font-normal leading-normal mb-1">Rehab Cost</p>
                 <p className="text-[#111518] text-sm font-normal leading-normal">$50,000</p>
+              </div>
+              <div className="pb-2">
+                <p className="text-[#60768a] text-sm font-normal leading-normal mb-1">Rehab Duration</p>
+                <p className="text-[#111518] text-sm font-normal leading-normal">2 months</p>
               </div>
             </div>
 
             {/* Calculated Metrics */}
             <h3 className="text-[#111518] text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4">Calculated Metrics</h3>
-            <div className="p-4 grid grid-cols-[20%_1fr] gap-x-6">
-              <div className="col-span-2 grid grid-cols-subgrid border-t border-t-[#dbe1e6] py-5">
-                <p className="text-[#60768a] text-sm font-normal leading-normal">Return on Investment (ROI)</p>
-                <p className="text-[#111518] text-sm font-normal leading-normal">20%</p>
+            <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="pb-2">
+                <p className="text-[#60768a] text-sm font-normal leading-normal mb-1">Total Profit</p>
+                <p className="text-[#111518] text-sm font-normal leading-normal">$90,000</p>
               </div>
-              <div className="col-span-2 grid grid-cols-subgrid border-t border-t-[#dbe1e6] py-5">
-                <p className="text-[#60768a] text-sm font-normal leading-normal">Average Length of Repair</p>
-                <p className="text-[#111518] text-sm font-normal leading-normal">60 Days</p>
+              <div className="pb-2">
+                <p className="text-[#60768a] text-sm font-normal leading-normal mb-1">Total Return on Investment (ROI)</p>
+                <p className="text-[#111518] text-sm font-normal leading-normal">34.62%</p>
+              </div>
+              <div className="pb-2">
+                <p className="text-[#60768a] text-sm font-normal leading-normal mb-1">Annualized Return on Investment</p>
+                <p className="text-[#111518] text-sm font-normal leading-normal">207.69%</p>
+              </div>
+              <div className="pb-2">
+                <p className="text-[#60768a] text-sm font-normal leading-normal mb-1">Profit per Square Foot</p>
+                <p className="text-[#111518] text-sm font-normal leading-normal">$41.86</p>
               </div>
             </div>
 
