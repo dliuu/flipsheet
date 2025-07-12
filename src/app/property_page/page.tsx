@@ -218,12 +218,7 @@ export default function PropertyPage() {
                  <button className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-[#f0f2f5] text-[#111518] text-sm font-bold leading-normal tracking-[0.015em] hover:bg-[#e4e6e9] transition-colors">
                    <span className="truncate">Download Report</span>
                  </button>
-                 <button 
-                   onClick={() => window.location.href = '/create_listing'}
-                   className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-[#28a745] text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-[#218838] transition-colors"
-                 >
-                   <span className="truncate">List Property</span>
-                 </button>
+
                </div>
              </div>
 
