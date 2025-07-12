@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { createProperty, uploadPropertyPhotos } from '../../lib/database';
-import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '@/supabaseClient';
+import SignUpModal from '@/components/SignUpModal';
 
 export default function CreateListingPage() {
-  const { user, signUp } = useAuth();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [showSignUpModal, setShowSignUpModal] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -24,27 +26,44 @@ export default function CreateListingPage() {
 
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
-  const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [signupData, setSignupData] = useState({
-    email: '',
-    phoneNumber: '',
-    password: '',
-    confirmPassword: ''
-  });
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Check authentication on component mount
+  useEffect(() => {
+    checkAuthentication();
+  }, []);
+
+  const checkAuthentication = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsAuthenticated(!!user);
+      
+      // If user is not authenticated, show the sign-up modal
+      if (!user) {
+        setShowSignUpModal(true);
+      }
+    } catch (error) {
+      console.error('Error checking authentication:', error);
+      setIsAuthenticated(false);
+      setShowSignUpModal(true);
+    }
+  };
+
+  const handleSignUpSuccess = () => {
+    setIsAuthenticated(true);
+    setShowSignUpModal(false);
+  };
+
+  const handleCloseModal = () => {
+    setShowSignUpModal(false);
+    // Redirect to home page if user closes the modal without signing up
+    window.location.href = '/';
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleSignupInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setSignupData(prev => ({
       ...prev,
       [name]: value
     }));
@@ -84,28 +103,10 @@ export default function CreateListingPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!user) {
-      // Prefill signup form with existing data
-      setSignupData({
-        email: formData.contactEmail,
-        phoneNumber: formData.phoneNumber,
-        password: '',
-        confirmPassword: ''
-      });
-      
-      // Show modal
-      setShowModal(true);
-      return;
-    }
-
-    // User is authenticated, proceed with property creation
     await submitProperty();
   };
 
   const submitProperty = async () => {
-    if (!user) return;
-
     setIsSubmitting(true);
     
     try {
@@ -161,31 +162,42 @@ export default function CreateListingPage() {
     }
   };
 
-  const handleSignupSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (signupData.password !== signupData.confirmPassword) {
-      alert('Passwords do not match');
-      return;
-    }
+  // Show loading state while checking authentication
+  if (isAuthenticated === null) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0b80ee] mx-auto mb-4"></div>
+          <p className="text-[#121416] text-lg">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
-    try {
-      await signUp(signupData.email, signupData.password, signupData.phoneNumber);
-      setShowModal(false);
-      alert('Account created successfully! You can now list your property.');
-      
-      // Automatically submit the property after successful signup
-      await submitProperty();
-      
-    } catch (error) {
-      console.error('Error signing up:', error);
-      alert('Error creating account. Please try again.');
-    }
-  };
-
-  const closeModal = () => {
-    setShowModal(false);
-  };
+  // Show sign-up modal if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="mb-8">
+            <h1 className="text-3xl md:text-4xl font-bold text-[#121416] leading-tight">
+              List Your Off-Market Property
+            </h1>
+          </div>
+          <div className="text-center py-12">
+            <p className="text-[#121416] text-lg mb-4">Please sign up to list your property.</p>
+          </div>
+        </div>
+        
+        {/* Sign Up Modal */}
+        <SignUpModal
+          isOpen={showSignUpModal}
+          onClose={handleCloseModal}
+          onSuccess={handleSignUpSuccess}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -195,11 +207,6 @@ export default function CreateListingPage() {
           <h1 className="text-3xl md:text-4xl font-bold text-[#121416] leading-tight">
             List Your Off-Market Property
           </h1>
-          {user && (
-            <p className="text-sm text-[#6a7681] mt-2">
-              Welcome back, {user.email}
-            </p>
-          )}
         </div>
 
         {/* Form */}
@@ -472,100 +479,11 @@ export default function CreateListingPage() {
               disabled={isSubmitting}
               className="w-full h-12 px-5 rounded-full bg-[#dce8f3] text-[#121416] text-base font-bold tracking-[0.015em] hover:bg-[#c5d9e8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Creating Property...' : (user ? 'List Property' : 'List Property (Sign Up Required)')}
+              {isSubmitting ? 'Creating Property...' : 'List Property'}
             </button>
           </div>
         </form>
       </div>
-
-      {/* Signup Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6 space-y-6">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-[#121416] leading-tight">
-                Create Your Account
-              </h2>
-              <p className="text-sm text-[#6a7681] mt-2">
-                Sign up to list your property
-              </p>
-            </div>
-
-            <form onSubmit={handleSignupSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <label className="block text-[#121416] text-base font-medium">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={signupData.email}
-                  onChange={handleSignupInputChange}
-                  required
-                  className="w-full h-14 px-4 rounded-xl bg-[#f1f2f4] text-[#121416] placeholder:text-[#6a7681] text-base font-normal focus:outline-none focus:ring-0 border-none"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-[#121416] text-base font-medium">
-                  Phone Number (Optional)
-                </label>
-                <input
-                  type="tel"
-                  name="phoneNumber"
-                  value={signupData.phoneNumber}
-                  onChange={handleSignupInputChange}
-                  className="w-full h-14 px-4 rounded-xl bg-[#f1f2f4] text-[#121416] placeholder:text-[#6a7681] text-base font-normal focus:outline-none focus:ring-0 border-none"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-[#121416] text-base font-medium">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  name="password"
-                  value={signupData.password}
-                  onChange={handleSignupInputChange}
-                  required
-                  className="w-full h-14 px-4 rounded-xl bg-[#f1f2f4] text-[#121416] placeholder:text-[#6a7681] text-base font-normal focus:outline-none focus:ring-0 border-none"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-[#121416] text-base font-medium">
-                  Confirm Password
-                </label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={signupData.confirmPassword}
-                  onChange={handleSignupInputChange}
-                  required
-                  className="w-full h-14 px-4 rounded-xl bg-[#f1f2f4] text-[#121416] placeholder:text-[#6a7681] text-base font-normal focus:outline-none focus:ring-0 border-none"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="flex-1 h-12 px-4 rounded-full bg-[#f1f2f4] text-[#121416] text-base font-bold tracking-[0.015em] hover:bg-[#e5e7eb] transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 h-12 px-4 rounded-full bg-[#dce8f3] text-[#121416] text-base font-bold tracking-[0.015em] hover:bg-[#c5d9e8] transition-colors"
-                >
-                  Sign Up
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 } 

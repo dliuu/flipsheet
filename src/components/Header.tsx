@@ -1,0 +1,151 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { supabase } from '@/supabaseClient';
+import SignUpModal from './SignUpModal';
+import LoginModal from './LoginModal';
+
+export default function Header() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [showSignUpModal, setShowSignUpModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
+  useEffect(() => {
+    checkAuthentication();
+  }, []);
+
+  const checkAuthentication = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsAuthenticated(!!user);
+    } catch (error) {
+      console.error('Error checking authentication:', error);
+      setIsAuthenticated(false);
+    }
+  };
+
+  const handleListProperty = () => {
+    if (!isAuthenticated) {
+      setShowSignUpModal(true);
+    } else {
+      window.location.href = '/create_listing';
+    }
+  };
+
+  const handleSignUpSuccess = () => {
+    setIsAuthenticated(true);
+    setShowSignUpModal(false);
+    window.location.href = '/create_listing';
+  };
+
+  const handleLoginSuccess = () => {
+    setIsAuthenticated(true);
+    setShowLoginModal(false);
+    window.location.href = '/create_listing';
+  };
+
+  const handleCloseSignUpModal = () => {
+    setShowSignUpModal(false);
+  };
+
+  const handleCloseLoginModal = () => {
+    setShowLoginModal(false);
+  };
+
+  const handleSwitchToLogin = () => {
+    setShowSignUpModal(false);
+    setShowLoginModal(true);
+  };
+
+  const handleSwitchToSignUp = () => {
+    setShowLoginModal(false);
+    setShowSignUpModal(true);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Error signing out:', error);
+      } else {
+        setIsAuthenticated(false);
+        window.location.href = '/';
+      }
+    } catch (error) {
+      console.error('Unexpected error during sign out:', error);
+    }
+  };
+
+  return (
+    <>
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            {/* Logo */}
+            <div className="flex items-center">
+              <h1 className="text-xl font-bold text-[#111518]">FlipSheet</h1>
+            </div>
+
+            {/* Navigation */}
+            <nav className="flex items-center space-x-4">
+              <button
+                onClick={() => window.location.href = '/property_page'}
+                className="text-[#111518] hover:text-[#0b80ee] transition-colors px-3 py-2 rounded-md text-sm font-medium"
+              >
+                Browse Properties
+              </button>
+              
+              {!isAuthenticated ? (
+                <>
+                  <button
+                    onClick={() => setShowLoginModal(true)}
+                    className="text-[#111518] hover:text-[#0b80ee] transition-colors px-3 py-2 rounded-md text-sm font-medium"
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    onClick={() => setShowSignUpModal(true)}
+                    className="bg-[#28a745] text-white px-4 py-2 rounded-full text-sm font-bold hover:bg-[#218838] transition-colors"
+                  >
+                    Sign Up
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={handleListProperty}
+                    className="bg-[#28a745] text-white px-4 py-2 rounded-full text-sm font-bold hover:bg-[#218838] transition-colors"
+                  >
+                    List Property
+                  </button>
+                  <button
+                    onClick={handleSignOut}
+                    className="text-[#111518] hover:text-red-600 transition-colors px-3 py-2 rounded-md text-sm font-medium"
+                  >
+                    Sign Out
+                  </button>
+                </>
+              )}
+            </nav>
+          </div>
+        </div>
+      </header>
+
+      {/* Sign Up Modal */}
+      <SignUpModal
+        isOpen={showSignUpModal}
+        onClose={handleCloseSignUpModal}
+        onSuccess={handleSignUpSuccess}
+        onSwitchToLogin={handleSwitchToLogin}
+      />
+
+      {/* Login Modal */}
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={handleCloseLoginModal}
+        onSuccess={handleLoginSuccess}
+        onSwitchToSignUp={handleSwitchToSignUp}
+      />
+    </>
+  );
+} 
