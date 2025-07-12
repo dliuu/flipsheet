@@ -1,6 +1,6 @@
 # FlipSheet
 
-A modern Next.js application with Supabase integration and Tailwind CSS styling.
+Generates a single one-pager for wholesalers to share their off-market properties. Minimal overhead.
 
 ## Features
 
