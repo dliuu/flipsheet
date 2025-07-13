@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { useAuth } from '@/lib/useAuth';
+import { useAuth } from '@/lib/auth/useAuth';
 import SignUpModal from './SignUpModal';
 import LoginModal from './LoginModal';
 

@@ -9,7 +9,7 @@ import {
   isAuthenticated,
   SignInData,
   SignUpData
-} from './auth';
+} from './index';
 
 export interface UseAuthReturn {
   user: AuthUser | null;
