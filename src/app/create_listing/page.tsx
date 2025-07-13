@@ -1,13 +1,9 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { createPropertyWithPhotos } from '../../lib/database';
-import { supabase } from '@/supabaseClient';
-import SignUpModal from '@/components/SignUpModal';
 
 export default function CreateListingPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [showSignUpModal, setShowSignUpModal] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -31,38 +27,6 @@ export default function CreateListingPage() {
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Check authentication on component mount
-  useEffect(() => {
-    checkAuthentication();
-  }, []);
-
-  const checkAuthentication = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      setIsAuthenticated(!!user);
-      
-      // If user is not authenticated, show the sign-up modal
-      if (!user) {
-        setShowSignUpModal(true);
-      }
-    } catch (error) {
-      console.error('Error checking authentication:', error);
-      setIsAuthenticated(false);
-      setShowSignUpModal(true);
-    }
-  };
-
-  const handleSignUpSuccess = () => {
-    setIsAuthenticated(true);
-    setShowSignUpModal(false);
-  };
-
-  const handleCloseModal = () => {
-    setShowSignUpModal(false);
-    // Redirect to home page if user closes the modal without signing up
-    window.location.href = '/';
-  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -113,7 +77,6 @@ export default function CreateListingPage() {
     setIsSubmitting(true);
     
     try {
-      // Create property with photos using the comprehensive function
       const property = await createPropertyWithPhotos({
         title: formData.title,
         description: formData.description,
@@ -158,50 +121,13 @@ export default function CreateListingPage() {
       setPhotos([]);
       setPhotoUrls([]);
       
-    } catch (error) {
-      console.error('Error creating property:', error);
-      alert('Error creating property. Please try again.');
+    } catch (error: any) {
+      const errorMessage = error.message || 'Error creating property. Please try again.';
+      alert(`Error creating property: ${errorMessage}`);
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  // Show loading state while checking authentication
-  if (isAuthenticated === null) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center" style={{fontFamily: 'Inter, "Noto Sans", sans-serif'}}>
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0b80ee] mx-auto mb-4"></div>
-          <p className="text-[#121416] text-lg">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show sign-up modal if not authenticated
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-white" style={{fontFamily: 'Inter, "Noto Sans", sans-serif'}}>
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <div className="mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold text-[#121416] leading-tight">
-              List Your Off-Market Property
-            </h1>
-          </div>
-          <div className="text-center py-12">
-            <p className="text-[#121416] text-lg mb-4">Please sign up to list your property.</p>
-          </div>
-        </div>
-        
-        {/* Sign Up Modal */}
-        <SignUpModal
-          isOpen={showSignUpModal}
-          onClose={handleCloseModal}
-          onSuccess={handleSignUpSuccess}
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-white" style={{fontFamily: 'Inter, "Noto Sans", sans-serif'}}>

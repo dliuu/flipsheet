@@ -21,7 +21,6 @@ export default function Header() {
       const { data: { user } } = await supabase.auth.getUser();
       setIsAuthenticated(!!user);
     } catch (error) {
-      console.error('Error checking authentication:', error);
       setIsAuthenticated(false);
     }
   };

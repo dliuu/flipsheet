@@ -34,9 +34,6 @@ export const signOutUser = async () => {
 
 // Property functions
 export const createProperty = async (propertyData: CreatePropertyData) => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('User not authenticated');
-
   // Map form data to database schema
   const mappedData = {
     title: propertyData.title,
@@ -63,7 +60,10 @@ export const createProperty = async (propertyData: CreatePropertyData) => {
     .select()
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    throw new Error(error.message);
+  }
+  
   return data;
 };
 
@@ -100,15 +100,7 @@ export const getPropertyPhotos = async (propertyId: string) => {
 };
 
 export const uploadPropertyPhotos = async (propertyId: string, photos: File[]) => {
-  // Check session first
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-  
-  // Check for user authentication before inserting
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  
-  if (!user) throw new Error('User not authenticated');
-
-  // Verify the property exists (without user_id check since it doesn't exist)
+  // Verify the property exists
   const { data: property, error: propertyError } = await supabase
     .from('properties')
     .select('id')
@@ -171,7 +163,7 @@ export const updateProperty = async (id: string, updates: Partial<CreateProperty
     .from('properties')
     .update(updates)
     .eq('id', id)
-    .eq('user_id', user.id) // Ensure user owns the property
+    .eq('user_id', user.id)
     .select()
     .single();
 
@@ -188,7 +180,7 @@ export const deleteProperty = async (id: string) => {
     .from('properties')
     .delete()
     .eq('id', id)
-    .eq('user_id', user.id); // Ensure user owns the property
+    .eq('user_id', user.id);
 
   if (error) throw error;
 };
