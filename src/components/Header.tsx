@@ -81,20 +81,12 @@ export default function Header() {
             {/* Navigation */}
             <nav className="flex items-center space-x-4">
               {!isAuthenticated ? (
-                <>
-                  <button
-                    onClick={() => setShowLoginModal(true)}
-                    className="text-[#111518] hover:text-[#0b80ee] transition-colors px-3 py-2 rounded-md text-sm font-medium"
-                  >
-                    Sign In
-                  </button>
-                  <button
-                    onClick={() => setShowSignUpModal(true)}
-                    className="bg-[#0b80ee] text-white px-4 py-2 rounded-full text-sm font-bold hover:bg-[#0a6fd8] transition-colors"
-                  >
-                    Sign Up
-                  </button>
-                </>
+                <button
+                  onClick={() => setShowSignUpModal(true)}
+                  className="bg-[#0b80ee] text-white px-4 py-2 rounded-full text-sm font-bold hover:bg-[#0a6fd8] transition-colors"
+                >
+                  Sign Up
+                </button>
               ) : (
                 pathname !== '/create_listing' && (
                   <button
