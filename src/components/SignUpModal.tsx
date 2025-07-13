@@ -20,7 +20,6 @@ export default function SignUpModal({ isOpen, onClose, onSuccess, onSwitchToLogi
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [passwordError, setPasswordError] = useState('');
   const router = useRouter();
 
@@ -82,28 +81,16 @@ export default function SignUpModal({ isOpen, onClose, onSuccess, onSwitchToLogi
           data: {
             full_name: formData.fullName,
           },
-          emailRedirectTo: `${window.location.origin}/create_listing`,
         },
       });
       
       if (error) {
         setError(error.message);
       } else {
-        // Check if email confirmation is required
-        if (data.user && !data.session) {
-          // Email confirmation required
-          setShowSuccessMessage(true);
-          setError('');
-          // Don't close modal yet, let user know to check email
-        } else if (data.session) {
-          // User is immediately signed in (email confirmation not required)
-          onSuccess?.();
-          onClose();
-          router.push('/create_listing');
-        } else {
-          // Fallback
-          setError('Signup successful but unable to sign in. Please try logging in.');
-        }
+        // User signed up successfully
+        onSuccess?.();
+        onClose();
+        router.push('/create_listing');
       }
     } catch (error) {
       setError('An unexpected error occurred. Please try again.');
@@ -214,39 +201,30 @@ export default function SignUpModal({ isOpen, onClose, onSuccess, onSwitchToLogi
               </div>
             )}
 
-            {/* Success Message */}
-            {showSuccessMessage && (
-              <div className="text-green-600 text-sm bg-green-50 p-3 rounded-lg font-normal">
-                <p className="font-normal">Account created successfully!</p>
-                <p className="mt-1 font-normal">Please check your email and click the confirmation link to complete your signup.</p>
-                <p className="mt-2 text-xs text-green-700 font-normal">You can close this modal and check your email.</p>
-              </div>
-            )}
-
             {/* Action Buttons */}
             <div className="pt-4">
               <button
                 type="submit"
-                disabled={isLoading || showSuccessMessage || !!passwordError || !formData.email || !formData.password || !formData.confirmPassword || !formData.fullName}
+                disabled={isLoading || !!passwordError || !formData.email || !formData.password || !formData.confirmPassword || !formData.fullName}
                 className="w-full px-4 py-2 bg-[#0b80ee] text-white rounded-lg hover:bg-[#0a6fd8] hover:shadow-lg hover:scale-[1.02] transition-all duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
               >
-                {isLoading ? 'Creating Account...' : showSuccessMessage ? 'Account Created!' : 'Sign Up'}
+                {isLoading ? 'Creating Account...' : 'Sign Up'}
               </button>
             </div>
 
             {/* Switch to Login */}
             {onSwitchToLogin && (
               <div className="text-center pt-4">
-                <p className="text-sm text-gray-600 font-normal">
+                <button
+                  type="button"
+                  onClick={onSwitchToLogin}
+                  className="text-sm text-gray-600 font-normal hover:text-gray-800 hover:underline transition-colors"
+                >
                   Already have an account?{' '}
-                  <button
-                    type="button"
-                    onClick={onSwitchToLogin}
-                    className="text-[#0b80ee] hover:text-[#0a6fd8] font-normal"
-                  >
+                  <span className="text-[#0b80ee] hover:text-[#0a6fd8] font-normal">
                     Sign In
-                  </button>
-                </p>
+                  </span>
+                </button>
               </div>
             )}
           </form>

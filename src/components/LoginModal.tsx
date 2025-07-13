@@ -135,16 +135,16 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToSignU
             {/* Switch to Sign Up */}
             {onSwitchToSignUp && (
               <div className="text-center pt-4">
-                <p className="text-sm text-gray-600 font-normal">
+                <button
+                  type="button"
+                  onClick={onSwitchToSignUp}
+                  className="text-sm text-gray-600 font-normal hover:text-gray-800 hover:underline transition-colors"
+                >
                   Don't have an account?{' '}
-                  <button
-                    type="button"
-                    onClick={onSwitchToSignUp}
-                    className="text-[#0b80ee] hover:text-[#0a6fd8] font-normal"
-                  >
+                  <span className="text-[#0b80ee] hover:text-[#0a6fd8] font-normal">
                     Sign Up
-                  </button>
-                </p>
+                  </span>
+                </button>
               </div>
             )}
           </form>
