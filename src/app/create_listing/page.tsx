@@ -169,7 +169,7 @@ export default function CreateListingPage() {
   // Show loading state while checking authentication
   if (isAuthenticated === null) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center" style={{fontFamily: 'Inter, "Noto Sans", sans-serif'}}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0b80ee] mx-auto mb-4"></div>
           <p className="text-[#121416] text-lg">Loading...</p>
@@ -181,7 +181,7 @@ export default function CreateListingPage() {
   // Show sign-up modal if not authenticated
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white" style={{fontFamily: 'Inter, "Noto Sans", sans-serif'}}>
         <div className="max-w-4xl mx-auto px-4 py-8">
           <div className="mb-8">
             <h1 className="text-3xl md:text-4xl font-bold text-[#121416] leading-tight">
@@ -204,7 +204,7 @@ export default function CreateListingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white" style={{fontFamily: 'Inter, "Noto Sans", sans-serif'}}>
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -535,7 +535,7 @@ export default function CreateListingPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full h-12 px-5 rounded-full bg-[#dce8f3] text-[#121416] text-base font-bold tracking-[0.015em] hover:bg-[#c5d9e8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full h-12 px-5 rounded-full bg-[#0b80ee] text-white text-base font-bold tracking-[0.015em] hover:bg-[#0a6fd8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
             >
               {isSubmitting ? 'Creating Property...' : 'List Property'}
             </button>

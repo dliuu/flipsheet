@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { supabase } from '@/supabaseClient';
 import SignUpModal from './SignUpModal';
 import LoginModal from './LoginModal';
 
 export default function Header() {
+  const pathname = usePathname();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [showSignUpModal, setShowSignUpModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -89,18 +91,20 @@ export default function Header() {
                   </button>
                   <button
                     onClick={() => setShowSignUpModal(true)}
-                    className="bg-[#28a745] text-white px-4 py-2 rounded-full text-sm font-bold hover:bg-[#218838] transition-colors"
+                    className="bg-[#0b80ee] text-white px-4 py-2 rounded-full text-sm font-bold hover:bg-[#0a6fd8] transition-colors"
                   >
                     Sign Up
                   </button>
                 </>
               ) : (
-                <button
-                  onClick={handleListProperty}
-                  className="bg-[#28a745] text-white px-4 py-2 rounded-full text-sm font-bold hover:bg-[#218838] transition-colors"
-                >
-                  List Property
-                </button>
+                pathname !== '/create_listing' && (
+                  <button
+                    onClick={() => setShowSignUpModal(true)}
+                    className="bg-[#0b80ee] text-white px-4 py-2 rounded-full text-sm font-bold hover:bg-[#0a6fd8] transition-colors"
+                  >
+                    Sign Up
+                  </button>
+                )
               )}
             </nav>
           </div>
