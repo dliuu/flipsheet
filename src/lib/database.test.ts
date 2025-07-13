@@ -37,13 +37,15 @@ describe('Database Functions - RLS Debug', () => {
 
   beforeEach(async () => {
     // Create a test user
-    const { data: { user }, error } = await supabase.auth.signUp({
+    const { signUp } = await import('./auth');
+    const { user, error } = await signUp({
       email: `test-${Date.now()}@example.com`,
-      password: 'testpassword123'
+      password: 'testpassword123',
+      fullName: 'Test User'
     });
     
     if (error) {
-      throw error;
+      throw new Error(error.message);
     }
     
     testUserId = user!.id;
@@ -62,12 +64,14 @@ describe('Database Functions - RLS Debug', () => {
 
   describe('Authentication Debug', () => {
     it('should check authentication status', async () => {
-      const { data: { user }, error } = await supabase.auth.getUser();
+      const { getCurrentUser } = await import('./auth');
+      const user = await getCurrentUser();
       expect(user).toBeTruthy();
     });
 
     it('should check session status', async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
+      const { getSession } = await import('./auth');
+      const { session } = await getSession();
       expect(session).toBeTruthy();
     });
   });

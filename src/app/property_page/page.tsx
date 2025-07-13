@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/supabaseClient';
+import { getSession } from '@/lib/auth';
 
 export default function PropertyPage() {
   const [isConnected, setIsConnected] = useState(false);
@@ -17,12 +17,12 @@ export default function PropertyPage() {
 
   const checkConnection = async () => {
     try {
-      const { data, error } = await supabase.auth.getSession();
+      const { session, error } = await getSession();
       
       if (error) {
         setIsConnected(false);
       } else {
-        setIsConnected(true);
+        setIsConnected(!!session);
       }
     } catch (error) {
       setIsConnected(false);

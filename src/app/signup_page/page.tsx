@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/supabaseClient";
+import { signUp, validateSignUpData, SignUpData } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 
 export default function SignupPage() {
@@ -25,32 +25,21 @@ export default function SignupPage() {
     setLoading(true);
     setError("");
 
-    if (!formData.fullName.trim()) {
-      setError("Full name is required");
-      setLoading(false);
-      return;
-    }
-    if (!formData.email.trim()) {
-      setError("Email is required");
-      setLoading(false);
-      return;
-    }
-    if (formData.password.length < 8) {
-      setError("Password must be at least 8 characters long");
+    const signUpData: SignUpData = {
+      email: formData.email,
+      password: formData.password,
+      fullName: formData.fullName
+    };
+
+    const validation = validateSignUpData(signUpData);
+    if (!validation.isValid) {
+      setError(validation.error || "Validation failed");
       setLoading(false);
       return;
     }
 
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            full_name: formData.fullName,
-          },
-        },
-      });
+      const { user, error } = await signUp(signUpData);
       
       if (error) {
         setError(error.message);

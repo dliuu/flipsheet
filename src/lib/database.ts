@@ -1,35 +1,35 @@
 import { supabase } from '../supabaseClient';
-import { User, Property, PropertyImage, CreatePropertyData } from '../types/database';
+import { Property, PropertyImage, CreatePropertyData } from '../types/database';
+import { signUp, signIn, signOut, SignUpData, SignInData } from './auth';
 
-// User functions
+// User functions - now using centralized auth functions
 export const createUser = async (email: string, password: string, phoneNumber?: string) => {
-  const { data, error } = await supabase.auth.signUp({
+  const signUpData: SignUpData = {
     email,
     password,
-    options: {
-      data: {
-        phone_number: phoneNumber
-      }
-    }
-  });
+    fullName: '', // This will need to be provided by the caller
+    phoneNumber
+  };
   
-  if (error) throw error;
-  return data;
+  const { user, error } = await signUp(signUpData);
+  if (error) throw new Error(error.message);
+  return user;
 };
 
 export const signInUser = async (email: string, password: string) => {
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const signInData: SignInData = {
     email,
     password
-  });
+  };
   
-  if (error) throw error;
-  return data;
+  const { user, error } = await signIn(signInData);
+  if (error) throw new Error(error.message);
+  return user;
 };
 
 export const signOutUser = async () => {
-  const { error } = await supabase.auth.signOut();
-  if (error) throw error;
+  const { error } = await signOut();
+  if (error) throw new Error(error.message);
 };
 
 // Property functions
@@ -149,9 +149,8 @@ export const uploadPropertyPhotos = async (propertyId: string, photos: File[]) =
 
 // Get current user
 export const getCurrentUser = async () => {
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error) throw error;
-  return user;
+  const { getCurrentUser: getAuthUser } = await import('./auth');
+  return await getAuthUser();
 };
 
 // Update property

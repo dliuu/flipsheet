@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { supabase } from '@/supabaseClient';
+import { signIn, validateSignInData, SignInData } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 
 interface LoginModalProps {
@@ -33,8 +33,14 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToSignU
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.email || !formData.password) {
-      setError('Please fill in all fields');
+    const signInData: SignInData = {
+      email: formData.email,
+      password: formData.password
+    };
+    
+    const validation = validateSignInData(signInData);
+    if (!validation.isValid) {
+      setError(validation.error || 'Please fill in all fields');
       return;
     }
     
@@ -42,10 +48,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToSignU
     setError('');
     
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
-      });
+      const { user, error } = await signIn(signInData);
       
       if (error) {
         setError(error.message);

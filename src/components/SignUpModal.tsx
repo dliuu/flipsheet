@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { supabase } from '@/supabaseClient';
+import { signUp, validateSignUpData, SignUpData } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 
 interface SignUpModalProps {
@@ -46,18 +46,20 @@ export default function SignUpModal({ isOpen, onClose, onSuccess, onSwitchToLogi
   };
 
   const validateForm = () => {
-    if (!formData.email || !formData.password || !formData.confirmPassword || !formData.fullName) {
-      setError('All fields are required');
+    const signUpData: SignUpData = {
+      email: formData.email,
+      password: formData.password,
+      fullName: formData.fullName
+    };
+    
+    const validation = validateSignUpData(signUpData);
+    if (!validation.isValid) {
+      setError(validation.error || 'Validation failed');
       return false;
     }
     
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
-      return false;
-    }
-    
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
       return false;
     }
     
@@ -73,16 +75,13 @@ export default function SignUpModal({ isOpen, onClose, onSuccess, onSwitchToLogi
     setError('');
     
     try {
-      // Sign up the user
-      const { data, error } = await supabase.auth.signUp({
+      const signUpData: SignUpData = {
         email: formData.email,
         password: formData.password,
-        options: {
-          data: {
-            full_name: formData.fullName,
-          },
-        },
-      });
+        fullName: formData.fullName
+      };
+      
+      const { user, error } = await signUp(signUpData);
       
       if (error) {
         setError(error.message);
