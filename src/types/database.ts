@@ -14,25 +14,27 @@ export interface Property {
   description?: string;
   address: string;
   asking_price?: number;
-  rehab_value?: number;
+  estimated_after_repair_value?: number;
+  estimated_closing_costs?: number;
+  estimated_as_is_value?: number;
   rehab_cost?: number;
-  potential_profit?: number;
+  rehab_duration_months?: number;
   bedrooms?: number;
   bathrooms?: number;
-  square_footage?: number;
-  lot_size?: number;
-  contact_email?: string;
-  phone_number?: string;
+  interior_sqft?: number;
+  lot_sqft?: number;
+  seller_email?: string;
+  seller_phone?: string;
   status: 'active' | 'inactive' | 'sold';
   created_at: string;
   updated_at: string;
 }
 
-export interface PropertyPhoto {
+export interface PropertyImage {
   id: string;
   property_id: string;
-  photo_url: string;
-  photo_order: number;
+  image_url: string;
+  image_order: number;
   created_at: string;
 }
 
@@ -40,14 +42,17 @@ export interface CreatePropertyData {
   title: string;
   description?: string;
   address: string;
-  asking_price?: number;
-  rehab_value?: number;
-  rehab_cost?: number;
-  potential_profit?: number;
+  property_type: string;
   bedrooms?: number;
   bathrooms?: number;
-  square_footage?: number;
-  lot_size?: number;
-  contact_email?: string;
-  phone_number?: string;
+  square_footage?: number; // This will be mapped to interior_sqft
+  lot_size?: number; // This will be mapped to lot_sqft
+  asking_price?: number;
+  estimated_closing_costs?: number;
+  estimated_after_repair_value?: number;
+  estimated_as_is_value?: number;
+  rehab_cost?: number;
+  rehab_duration_months?: number;
+  contact_email?: string; // This will be mapped to seller_email
+  phone_number?: string; // This will be mapped to seller_phone
 } 

@@ -61,9 +61,6 @@ export default function SignUpModal({ isOpen, onClose, onSuccess, onSwitchToLogi
     setError('');
     
     try {
-      console.log('=== SIGNUP DEBUG START ===');
-      console.log('Form data:', { email: formData.email, fullName: formData.fullName });
-      
       // Sign up the user
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
@@ -76,13 +73,7 @@ export default function SignUpModal({ isOpen, onClose, onSuccess, onSwitchToLogi
         },
       });
       
-      console.log('=== SIGNUP RESPONSE ===');
-      console.log('Data:', data);
-      console.log('Error:', error);
-      console.log('=== SIGNUP DEBUG END ===');
-      
       if (error) {
-        console.error('Supabase auth error:', error);
         setError(error.message);
       } else {
         // Check if email confirmation is required
@@ -93,7 +84,6 @@ export default function SignUpModal({ isOpen, onClose, onSuccess, onSwitchToLogi
           // Don't close modal yet, let user know to check email
         } else if (data.session) {
           // User is immediately signed in (email confirmation not required)
-          console.log('User signed in immediately:', data.user);
           onSuccess?.();
           onClose();
           router.push('/create_listing');
@@ -103,7 +93,6 @@ export default function SignUpModal({ isOpen, onClose, onSuccess, onSwitchToLogi
         }
       }
     } catch (error) {
-      console.error('Unexpected error during signup:', error);
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);

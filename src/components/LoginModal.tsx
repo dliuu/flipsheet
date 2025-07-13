@@ -42,30 +42,19 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToSignU
     setError('');
     
     try {
-      console.log('=== LOGIN DEBUG START ===');
-      console.log('Form data:', { email: formData.email });
-      
       const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
       
-      console.log('=== LOGIN RESPONSE ===');
-      console.log('Data:', data);
-      console.log('Error:', error);
-      console.log('=== LOGIN DEBUG END ===');
-      
       if (error) {
-        console.error('Supabase auth error:', error);
         setError(error.message);
       } else {
-        console.log('User signed in successfully:', data.user);
         onSuccess?.();
         onClose();
         router.push('/create_listing');
       }
     } catch (error) {
-      console.error('Unexpected error during login:', error);
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);

@@ -48,8 +48,6 @@ export default function PropertyPage() {
   const handleSubmitContact = (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: Implement email functionality
-    console.log('User contact:', userContact);
-    console.log('Message:', message);
     handleCloseModal();
   };
 

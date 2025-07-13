@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { createProperty, uploadPropertyPhotos } from '../../lib/database';
+import { createPropertyWithPhotos } from '../../lib/database';
 import { supabase } from '@/supabaseClient';
 import SignUpModal from '@/components/SignUpModal';
 
@@ -12,10 +12,13 @@ export default function CreateListingPage() {
     title: '',
     description: '',
     address: '',
+    propertyType: '',
     askingPrice: '',
-    rehabValue: '',
+    estimatedAfterRepairValue: '',
+    estimatedClosingCosts: '',
+    estimatedAsIsValue: '',
     rehabCost: '',
-    potentialProfit: '',
+    rehabDurationMonths: '',
     bedrooms: '',
     bathrooms: '',
     squareFootage: '',
@@ -61,7 +64,7 @@ export default function CreateListingPage() {
     window.location.href = '/';
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -110,27 +113,25 @@ export default function CreateListingPage() {
     setIsSubmitting(true);
     
     try {
-      // Create property
-      const property = await createProperty({
+      // Create property with photos using the comprehensive function
+      const property = await createPropertyWithPhotos({
         title: formData.title,
         description: formData.description,
         address: formData.address,
+        property_type: formData.propertyType,
         asking_price: parseFloat(formData.askingPrice) || undefined,
-        rehab_value: parseFloat(formData.rehabValue) || undefined,
+        estimated_after_repair_value: parseFloat(formData.estimatedAfterRepairValue) || undefined,
+        estimated_closing_costs: parseFloat(formData.estimatedClosingCosts) || undefined,
+        estimated_as_is_value: parseFloat(formData.estimatedAsIsValue) || undefined,
         rehab_cost: parseFloat(formData.rehabCost) || undefined,
-        potential_profit: parseFloat(formData.potentialProfit) || undefined,
+        rehab_duration_months: parseInt(formData.rehabDurationMonths) || undefined,
         bedrooms: parseFloat(formData.bedrooms) || undefined,
         bathrooms: parseFloat(formData.bathrooms) || undefined,
         square_footage: parseInt(formData.squareFootage) || undefined,
         lot_size: parseInt(formData.lotSize) || undefined,
         contact_email: formData.contactEmail,
         phone_number: formData.phoneNumber
-      });
-
-      // Upload photos if any
-      if (photos.length > 0) {
-        await uploadPropertyPhotos(property.id, photos);
-      }
+      }, photos);
 
       // Show success message
       alert('Property listed successfully!');
@@ -140,10 +141,13 @@ export default function CreateListingPage() {
         title: '',
         description: '',
         address: '',
+        propertyType: '',
         askingPrice: '',
-        rehabValue: '',
+        estimatedAfterRepairValue: '',
+        estimatedClosingCosts: '',
+        estimatedAsIsValue: '',
         rehabCost: '',
-        potentialProfit: '',
+        rehabDurationMonths: '',
         bedrooms: '',
         bathrooms: '',
         squareFootage: '',
@@ -258,6 +262,28 @@ export default function CreateListingPage() {
             />
           </div>
 
+          {/* Property Type */}
+          <div className="space-y-2">
+            <label className="block text-[#121416] text-base font-medium">
+              Property Type
+            </label>
+            <select
+              name="propertyType"
+              value={formData.propertyType}
+              onChange={handleInputChange}
+              className="w-full h-14 px-4 rounded-xl bg-[#f1f2f4] text-[#121416] text-base font-normal focus:outline-none focus:ring-0 border-none"
+              required
+            >
+              <option value="">Select Property Type</option>
+              <option value="Single Family">Single Family</option>
+              <option value="Multi-Family">Multi-Family</option>
+              <option value="Townhouse">Townhouse</option>
+              <option value="Condo">Condo</option>
+              <option value="Commercial">Commercial</option>
+              <option value="Land">Land</option>
+            </select>
+          </div>
+
           {/* Price Fields - Two Columns */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -276,15 +302,47 @@ export default function CreateListingPage() {
             </div>
             <div className="space-y-2">
               <label className="block text-[#121416] text-base font-medium">
-                Estimated Rehab Value ($)
+                Estimated After Repair Value ($)
               </label>
               <input
                 type="number"
                 step="0.01"
-                name="rehabValue"
-                value={formData.rehabValue}
+                name="estimatedAfterRepairValue"
+                value={formData.estimatedAfterRepairValue}
                 onChange={handleInputChange}
                 placeholder="350000"
+                className="w-full h-14 px-4 rounded-xl bg-[#f1f2f4] text-[#121416] placeholder:text-[#6a7681] text-base font-normal focus:outline-none focus:ring-0 border-none"
+              />
+            </div>
+          </div>
+
+          {/* Additional Price Fields - Two Columns */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="block text-[#121416] text-base font-medium">
+                Estimated Closing Costs ($)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                name="estimatedClosingCosts"
+                value={formData.estimatedClosingCosts}
+                onChange={handleInputChange}
+                placeholder="10000"
+                className="w-full h-14 px-4 rounded-xl bg-[#f1f2f4] text-[#121416] placeholder:text-[#6a7681] text-base font-normal focus:outline-none focus:ring-0 border-none"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-[#121416] text-base font-medium">
+                Estimated As-Is Value ($)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                name="estimatedAsIsValue"
+                value={formData.estimatedAsIsValue}
+                onChange={handleInputChange}
+                placeholder="275000"
                 className="w-full h-14 px-4 rounded-xl bg-[#f1f2f4] text-[#121416] placeholder:text-[#6a7681] text-base font-normal focus:outline-none focus:ring-0 border-none"
               />
             </div>
@@ -308,15 +366,15 @@ export default function CreateListingPage() {
             </div>
             <div className="space-y-2">
               <label className="block text-[#121416] text-base font-medium">
-                Potential Profit ($)
+                Rehab Duration (months)
               </label>
               <input
                 type="number"
-                step="0.01"
-                name="potentialProfit"
-                value={formData.potentialProfit}
+                step="1"
+                name="rehabDurationMonths"
+                value={formData.rehabDurationMonths}
                 onChange={handleInputChange}
-                placeholder="50000"
+                placeholder="2"
                 className="w-full h-14 px-4 rounded-xl bg-[#f1f2f4] text-[#121416] placeholder:text-[#6a7681] text-base font-normal focus:outline-none focus:ring-0 border-none"
               />
             </div>

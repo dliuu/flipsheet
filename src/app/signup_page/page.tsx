@@ -42,17 +42,6 @@ export default function SignupPage() {
     }
 
     try {
-      console.log('=== SIGNUP DEBUG START ===');
-      console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
-      console.log('Supabase Anon Key exists:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-      console.log('Form data:', { email: formData.email, fullName: formData.fullName });
-      
-      // Test connection first
-      console.log('Testing Supabase connection...');
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      console.log('Session check result:', { sessionData, sessionError });
-      
-      console.log('Attempting signup...');
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -63,39 +52,15 @@ export default function SignupPage() {
         },
       });
       
-      console.log('=== SIGNUP RESPONSE ===');
-      console.log('Data:', data);
-      console.log('Error:', error);
-      console.log('Error details:', error ? {
-        message: error.message,
-        status: error.status,
-        name: error.name,
-        stack: error.stack
-      } : 'No error');
-      console.log('=== SIGNUP DEBUG END ===');
-      
       if (error) {
-        console.error('Supabase auth error details:', {
-          message: error.message,
-          status: error.status,
-          name: error.name,
-          stack: error.stack
-        });
         setError(error.message);
       } else {
-        console.log('Signup successful:', data);
         setSuccess(true);
         setTimeout(() => {
           router.push("/property_page");
         }, 2000);
       }
     } catch (err) {
-      console.error('=== UNEXPECTED ERROR ===');
-      console.error('Error type:', typeof err);
-      console.error('Error object:', err);
-      console.error('Error message:', err instanceof Error ? err.message : 'Unknown error');
-      console.error('Error stack:', err instanceof Error ? err.stack : 'No stack');
-      console.error('=== END UNEXPECTED ERROR ===');
       setError("An unexpected error occurred. Please try again.");
     } finally {
       setLoading(false);
