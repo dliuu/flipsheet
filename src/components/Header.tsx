@@ -85,22 +85,13 @@ export default function Header() {
 
             {/* Navigation */}
             <nav className="flex items-center space-x-4">
-              {!isAuthenticated ? (
+              {!isAuthenticated && (
                 <button
                   onClick={() => setShowSignUpModal(true)}
                   className="bg-[#0b80ee] text-white px-4 py-2 rounded-full text-sm font-bold hover:bg-[#0a6fd8] transition-colors"
                 >
                   Sign Up
                 </button>
-              ) : (
-                pathname !== '/create_listing' && (
-                  <button
-                    onClick={() => setShowSignUpModal(true)}
-                    className="bg-[#0b80ee] text-white px-4 py-2 rounded-full text-sm font-bold hover:bg-[#0a6fd8] transition-colors"
-                  >
-                    Sign Up
-                </button>
-                )
               )}
             </nav>
           </div>
