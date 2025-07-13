@@ -291,6 +291,7 @@ describe('Database Functions', () => {
       const propertyData: CreatePropertyData = {
         title: 'Test Property',
         address: '123 Test St',
+        property_type: 'Single Family',
       };
 
       const result = await createPropertyWithPhotos(propertyData, mockFiles);
@@ -321,6 +322,7 @@ describe('Database Functions', () => {
       const propertyData: CreatePropertyData = {
         title: 'Test Property',
         address: '123 Test St',
+        property_type: 'Single Family',
       };
 
       const result = await createPropertyWithPhotos(propertyData);
@@ -345,6 +347,7 @@ describe('Database Functions', () => {
       const propertyData: CreatePropertyData = {
         title: 'Test Property',
         address: '123 Test St',
+        property_type: 'Single Family',
       };
 
       await expect(createPropertyWithPhotos(propertyData)).rejects.toThrow();

@@ -2,6 +2,31 @@
 
 import { useState, useRef } from 'react';
 import { createPropertyWithPhotos } from '../../lib/database';
+import { isAuthenticated, signOut } from '../../lib/auth';
+import SignUpModal from '../../components/SignUpModal';
+
+// Interface for pending property data
+interface PendingProperty {
+  propertyData: {
+    title: string;
+    description: string;
+    address: string;
+    property_type: string;
+    asking_price?: number;
+    estimated_after_repair_value?: number;
+    estimated_closing_costs?: number;
+    estimated_as_is_value?: number;
+    rehab_cost?: number;
+    rehab_duration_months?: number;
+    bedrooms?: number;
+    bathrooms?: number;
+    square_footage?: number;
+    lot_size?: number;
+    contact_email: string;
+    phone_number: string;
+  };
+  photos: File[];
+}
 
 export default function CreateListingPage() {
   const [formData, setFormData] = useState({
@@ -26,6 +51,8 @@ export default function CreateListingPage() {
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSignUpModal, setShowSignUpModal] = useState(false);
+  const [pendingProperty, setPendingProperty] = useState<PendingProperty | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -77,6 +104,41 @@ export default function CreateListingPage() {
     setIsSubmitting(true);
     
     try {
+      // Check if user is authenticated
+      const authenticated = await isAuthenticated();
+      console.log('Authentication check result:', authenticated);
+      
+      if (!authenticated) {
+        // Create pending property object
+        const pendingPropertyData: PendingProperty = {
+          propertyData: {
+            title: formData.title,
+            description: formData.description,
+            address: formData.address,
+            property_type: formData.propertyType,
+            asking_price: parseFloat(formData.askingPrice) || undefined,
+            estimated_after_repair_value: parseFloat(formData.estimatedAfterRepairValue) || undefined,
+            estimated_closing_costs: parseFloat(formData.estimatedClosingCosts) || undefined,
+            estimated_as_is_value: parseFloat(formData.estimatedAsIsValue) || undefined,
+            rehab_cost: parseFloat(formData.rehabCost) || undefined,
+            rehab_duration_months: parseInt(formData.rehabDurationMonths) || undefined,
+            bedrooms: parseFloat(formData.bedrooms) || undefined,
+            bathrooms: parseFloat(formData.bathrooms) || undefined,
+            square_footage: parseInt(formData.squareFootage) || undefined,
+            lot_size: parseInt(formData.lotSize) || undefined,
+            contact_email: formData.contactEmail,
+            phone_number: formData.phoneNumber
+          },
+          photos: [...photos]
+        };
+        
+        setPendingProperty(pendingPropertyData);
+        setShowSignUpModal(true);
+        setIsSubmitting(false);
+        return;
+      }
+
+      // User is authenticated, proceed with normal flow
       const property = await createPropertyWithPhotos({
         title: formData.title,
         description: formData.description,
@@ -129,14 +191,71 @@ export default function CreateListingPage() {
     }
   };
 
+  const handleSignUpSuccess = async () => {
+    if (pendingProperty) {
+      try {
+        // Now that user is authenticated, create the property
+        const property = await createPropertyWithPhotos(
+          pendingProperty.propertyData,
+          pendingProperty.photos
+        );
+
+        // Show success message
+        alert('Account created and property listed successfully!');
+        
+        // Reset form
+        setFormData({
+          title: '',
+          description: '',
+          address: '',
+          propertyType: '',
+          askingPrice: '',
+          estimatedAfterRepairValue: '',
+          estimatedClosingCosts: '',
+          estimatedAsIsValue: '',
+          rehabCost: '',
+          rehabDurationMonths: '',
+          bedrooms: '',
+          bathrooms: '',
+          squareFootage: '',
+          lotSize: '',
+          contactEmail: '',
+          phoneNumber: ''
+        });
+        setPhotos([]);
+        setPhotoUrls([]);
+        setPendingProperty(null);
+        
+      } catch (error: any) {
+        const errorMessage = error.message || 'Error creating property. Please try again.';
+        alert(`Error creating property: ${errorMessage}`);
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white" style={{fontFamily: 'Inter, "Noto Sans", sans-serif'}}>
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-[#121416] leading-tight">
-            List Your Off-Market Property
-          </h1>
+          <div className="flex justify-between items-center">
+            <h1 className="text-3xl md:text-4xl font-bold text-[#121416] leading-tight">
+              List Your Off-Market Property
+            </h1>
+            <button
+              onClick={async () => {
+                const { error } = await signOut();
+                if (error) {
+                  alert(`Error signing out: ${error.message}`);
+                } else {
+                  alert('Successfully signed out! Refresh the page to test the auth flow.');
+                }
+              }}
+              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+            >
+              Sign Out (Debug)
+            </button>
+          </div>
         </div>
 
         {/* Form */}
@@ -468,6 +587,17 @@ export default function CreateListingPage() {
           </div>
         </form>
       </div>
+
+      {/* Sign Up Modal */}
+      <SignUpModal
+        isOpen={showSignUpModal}
+        onClose={() => {
+          setShowSignUpModal(false);
+          setPendingProperty(null);
+        }}
+        onSuccess={handleSignUpSuccess}
+        pendingProperty={pendingProperty}
+      />
     </div>
   );
 } 

@@ -9,9 +9,10 @@ interface SignUpModalProps {
   onClose: () => void;
   onSuccess?: () => void;
   onSwitchToLogin?: () => void;
+  pendingProperty?: any; // Add support for pending property data
 }
 
-export default function SignUpModal({ isOpen, onClose, onSuccess, onSwitchToLogin }: SignUpModalProps) {
+export default function SignUpModal({ isOpen, onClose, onSuccess, onSwitchToLogin, pendingProperty }: SignUpModalProps) {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -118,6 +119,13 @@ export default function SignUpModal({ isOpen, onClose, onSuccess, onSwitchToLogi
 
         {/* Modal Content */}
         <div className="p-6">
+          {pendingProperty && (
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-blue-700 text-sm">
+                Create an account to list your property: <strong>{pendingProperty.propertyData.title}</strong>
+              </p>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Full Name */}
             <div>
