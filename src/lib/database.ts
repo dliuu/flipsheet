@@ -34,8 +34,13 @@ export const signOutUser = async () => {
 
 // Property functions
 export const createProperty = async (propertyData: CreatePropertyData) => {
+  // Get current user
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
   // Map form data to database schema
   const mappedData = {
+    user_id: user.id,
     title: propertyData.title,
     description: propertyData.description,
     address: propertyData.address,

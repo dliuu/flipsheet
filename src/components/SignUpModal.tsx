@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { signUp, validateSignUpData, SignUpData } from '@/lib/auth';
+import { createPropertyWithPhotos } from '@/lib/database';
 import { useRouter } from 'next/navigation';
 
 interface SignUpModalProps {
@@ -82,17 +83,45 @@ export default function SignUpModal({ isOpen, onClose, onSuccess, onSwitchToLogi
         fullName: formData.fullName
       };
       
+      // Step 1: Create the user
       const { user, error } = await signUp(signUpData);
       
       if (error) {
         setError(error.message);
+        return;
+      }
+
+      if (!user) {
+        setError('Failed to create user account');
+        return;
+      }
+
+      // If there's a pending property, create it with the new user's ID
+      if (pendingProperty) {
+        try {
+          // Step 2: Create the property with the new user's ID
+          const property = await createPropertyWithPhotos(
+            pendingProperty.propertyData,
+            pendingProperty.photos
+          );
+
+          // Success - both user and property created
+          onSuccess?.();
+          onClose();
+          router.push('/dashboard');
+        } catch (propertyError: any) {
+          setError(`Account created successfully, but failed to create property: ${propertyError.message}`);
+          // Still close modal and redirect since user was created
+          onClose();
+          router.push('/dashboard');
+        }
       } else {
-        // User signed up successfully
+        // No pending property, just redirect to create listing
         onSuccess?.();
         onClose();
         router.push('/create_listing');
       }
-    } catch (error) {
+    } catch (error: any) {
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);

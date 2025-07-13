@@ -192,45 +192,29 @@ export default function CreateListingPage() {
   };
 
   const handleSignUpSuccess = async () => {
-    if (pendingProperty) {
-      try {
-        // Now that user is authenticated, create the property
-        const property = await createPropertyWithPhotos(
-          pendingProperty.propertyData,
-          pendingProperty.photos
-        );
-
-        // Show success message
-        alert('Account created and property listed successfully!');
-        
-        // Reset form
-        setFormData({
-          title: '',
-          description: '',
-          address: '',
-          propertyType: '',
-          askingPrice: '',
-          estimatedAfterRepairValue: '',
-          estimatedClosingCosts: '',
-          estimatedAsIsValue: '',
-          rehabCost: '',
-          rehabDurationMonths: '',
-          bedrooms: '',
-          bathrooms: '',
-          squareFootage: '',
-          lotSize: '',
-          contactEmail: '',
-          phoneNumber: ''
-        });
-        setPhotos([]);
-        setPhotoUrls([]);
-        setPendingProperty(null);
-        
-      } catch (error: any) {
-        const errorMessage = error.message || 'Error creating property. Please try again.';
-        alert(`Error creating property: ${errorMessage}`);
-      }
-    }
+    // Property creation is now handled in SignUpModal
+    // Just reset the form and clear pending property
+    setFormData({
+      title: '',
+      description: '',
+      address: '',
+      propertyType: '',
+      askingPrice: '',
+      estimatedAfterRepairValue: '',
+      estimatedClosingCosts: '',
+      estimatedAsIsValue: '',
+      rehabCost: '',
+      rehabDurationMonths: '',
+      bedrooms: '',
+      bathrooms: '',
+      squareFootage: '',
+      lotSize: '',
+      contactEmail: '',
+      phoneNumber: ''
+    });
+    setPhotos([]);
+    setPhotoUrls([]);
+    setPendingProperty(null);
   };
 
   return (
@@ -238,24 +222,9 @@ export default function CreateListingPage() {
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex justify-between items-center">
-            <h1 className="text-3xl md:text-4xl font-bold text-[#121416] leading-tight">
-              List Your Off-Market Property
-            </h1>
-            <button
-              onClick={async () => {
-                const { error } = await signOut();
-                if (error) {
-                  alert(`Error signing out: ${error.message}`);
-                } else {
-                  alert('Successfully signed out! Refresh the page to test the auth flow.');
-                }
-              }}
-              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-            >
-              Sign Out (Debug)
-            </button>
-          </div>
+          <h1 className="text-3xl md:text-4xl font-bold text-[#121416] leading-tight">
+            List Your Off-Market Property
+          </h1>
         </div>
 
         {/* Form */}
