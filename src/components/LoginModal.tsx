@@ -52,7 +52,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToSignU
       } else {
         onSuccess?.();
         onClose();
-        router.push('/create_listing');
+        router.push('/dashboard');
       }
     } catch (error) {
       setError('An unexpected error occurred. Please try again.');
@@ -64,14 +64,14 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToSignU
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" style={{fontFamily: 'Inter, "Noto Sans", sans-serif'}}>
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         {/* Modal Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-[#111518]">Sign In to List Your Property</h2>
+          <h2 className="text-xl font-normal text-[#111518]">Sign In</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 hover:text-gray-600 hover:scale-110 transition-all duration-200 ease-in-out"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -84,7 +84,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToSignU
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-[#111518] mb-2">
+              <label className="block text-sm font-normal text-[#111518] mb-2">
                 Email Address
               </label>
               <input
@@ -93,14 +93,14 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToSignU
                 value={formData.email}
                 onChange={handleInputChange}
                 placeholder="your.email@example.com"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] placeholder:text-[#6a7681] text-sm font-normal"
                 required
               />
             </div>
 
             {/* Password */}
             <div>
-              <label className="block text-sm font-medium text-[#111518] mb-2">
+              <label className="block text-sm font-normal text-[#111518] mb-2">
                 Password
               </label>
               <input
@@ -109,31 +109,24 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToSignU
                 value={formData.password}
                 onChange={handleInputChange}
                 placeholder="Enter your password"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] placeholder:text-[#6a7681] text-sm font-normal"
                 required
               />
             </div>
 
             {/* Error Message */}
             {error && (
-              <div className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">
+              <div className="text-red-500 text-sm bg-red-50 p-3 rounded-lg font-normal">
                 {error}
               </div>
             )}
 
             {/* Action Buttons */}
-            <div className="flex space-x-3 pt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 px-4 py-2 border border-gray-300 text-[#111518] rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
+            <div className="pt-4">
               <button
                 type="submit"
-                disabled={isLoading}
-                className="flex-1 px-4 py-2 bg-[#0b80ee] text-white rounded-lg hover:bg-[#0a6fd8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isLoading || !formData.email || !formData.password}
+                className="w-full px-4 py-2 bg-[#0b80ee] text-white rounded-lg hover:bg-[#0a6fd8] hover:shadow-lg hover:scale-[1.02] transition-all duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
               >
                 {isLoading ? 'Signing In...' : 'Sign In'}
               </button>
@@ -142,12 +135,12 @@ export default function LoginModal({ isOpen, onClose, onSuccess, onSwitchToSignU
             {/* Switch to Sign Up */}
             {onSwitchToSignUp && (
               <div className="text-center pt-4">
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 font-normal">
                   Don't have an account?{' '}
                   <button
                     type="button"
                     onClick={onSwitchToSignUp}
-                    className="text-[#0b80ee] hover:text-[#0a6fd8] font-medium"
+                    className="text-[#0b80ee] hover:text-[#0a6fd8] font-normal"
                   >
                     Sign Up
                   </button>
