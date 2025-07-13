@@ -62,20 +62,6 @@ export default function Header() {
     setShowSignUpModal(true);
   };
 
-  const handleSignOut = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Error signing out:', error);
-      } else {
-        setIsAuthenticated(false);
-        window.location.href = '/';
-      }
-    } catch (error) {
-      console.error('Unexpected error during sign out:', error);
-    }
-  };
-
   return (
     <>
       <header className="bg-white shadow-sm border-b border-gray-200">
@@ -83,18 +69,16 @@ export default function Header() {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex items-center">
-              <h1 className="text-xl font-bold text-[#111518]">FlipSheet</h1>
+              <h1 
+                className="text-xl font-bold text-[#111518] cursor-pointer hover:text-[#0b80ee] transition-colors"
+                onClick={() => window.location.href = '/property_page'}
+              >
+                FlipSheet
+              </h1>
             </div>
 
             {/* Navigation */}
             <nav className="flex items-center space-x-4">
-              <button
-                onClick={() => window.location.href = '/property_page'}
-                className="text-[#111518] hover:text-[#0b80ee] transition-colors px-3 py-2 rounded-md text-sm font-medium"
-              >
-                Browse Properties
-              </button>
-              
               {!isAuthenticated ? (
                 <>
                   <button
@@ -111,20 +95,12 @@ export default function Header() {
                   </button>
                 </>
               ) : (
-                <>
-                  <button
-                    onClick={handleListProperty}
-                    className="bg-[#28a745] text-white px-4 py-2 rounded-full text-sm font-bold hover:bg-[#218838] transition-colors"
-                  >
-                    List Property
-                  </button>
-                  <button
-                    onClick={handleSignOut}
-                    className="text-[#111518] hover:text-red-600 transition-colors px-3 py-2 rounded-md text-sm font-medium"
-                  >
-                    Sign Out
-                  </button>
-                </>
+                <button
+                  onClick={handleListProperty}
+                  className="bg-[#28a745] text-white px-4 py-2 rounded-full text-sm font-bold hover:bg-[#218838] transition-colors"
+                >
+                  List Property
+                </button>
               )}
             </nav>
           </div>
