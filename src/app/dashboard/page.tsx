@@ -1,8 +1,33 @@
 "use client";
 
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { getUserProperties } from '../../lib/read_properties';
+import { Property } from '../../types/database';
 
 export default function Dashboard() {
+  const [user_properties, setUserProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUserProperties = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const properties = await getUserProperties();
+        setUserProperties(properties);
+      } catch (err) {
+        console.error('Error fetching user properties:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch properties');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserProperties();
+  }, []);
+
   return (
     <div className="relative flex size-full min-h-screen flex-col bg-white group/design-root overflow-x-hidden" style={{fontFamily: 'Inter, "Noto Sans", sans-serif'}}>
       <div className="layout-container flex h-full grow flex-col">

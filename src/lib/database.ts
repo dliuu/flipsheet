@@ -72,26 +72,7 @@ export const createProperty = async (propertyData: CreatePropertyData) => {
   return data;
 };
 
-export const getProperties = async () => {
-  const { data, error } = await supabase
-    .from('properties')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data;
-};
-
-export const getPropertyById = async (id: string) => {
-  const { data, error } = await supabase
-    .from('properties')
-    .select('*')
-    .eq('id', id)
-    .single();
-
-  if (error) throw error;
-  return data;
-};
+// Removed unused property reading functions: getProperties, getUserProperties, getPropertyById
 
 export const getPropertyPhotos = async (propertyId: string) => {
   const { data, error } = await supabase
@@ -187,21 +168,6 @@ export const deleteProperty = async (id: string) => {
     .eq('user_id', user.id);
 
   if (error) throw error;
-};
-
-// Get user's properties
-export const getUserProperties = async () => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('User not authenticated');
-
-  const { data, error } = await supabase
-    .from('properties')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data;
 };
 
 // Comprehensive property creation function
