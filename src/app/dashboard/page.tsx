@@ -28,6 +28,72 @@ export default function Dashboard() {
     fetchUserProperties();
   }, []);
 
+  // Helper function to format date
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+  };
+
+  // Helper function to format currency
+  const formatCurrency = (amount?: number) => {
+    if (!amount) return 'N/A';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  if (loading) {
+    return (
+      <div className="relative flex size-full min-h-screen flex-col bg-white group/design-root overflow-x-hidden" style={{fontFamily: 'Inter, "Noto Sans", sans-serif'}}>
+        <div className="layout-container flex h-full grow flex-col">
+          <div className="px-40 flex flex-1 justify-center py-5">
+            <div className="layout-content-container flex flex-col max-w-[960px] flex-1">
+              <div className="flex flex-wrap justify-between gap-3 p-4" style={{marginLeft: '-70px'}}>
+                <p className="text-[#121416] tracking-light text-[32px] font-bold leading-tight min-w-72">
+                  My Listings
+                </p>
+              </div>
+              <div className="px-4 py-3 @container">
+                <div className="flex items-center justify-center h-64">
+                  <p className="text-[#6a7681] text-lg">Loading your properties...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="relative flex size-full min-h-screen flex-col bg-white group/design-root overflow-x-hidden" style={{fontFamily: 'Inter, "Noto Sans", sans-serif'}}>
+        <div className="layout-container flex h-full grow flex-col">
+          <div className="px-40 flex flex-1 justify-center py-5">
+            <div className="layout-content-container flex flex-col max-w-[960px] flex-1">
+              <div className="flex flex-wrap justify-between gap-3 p-4" style={{marginLeft: '-70px'}}>
+                <p className="text-[#121416] tracking-light text-[32px] font-bold leading-tight min-w-72">
+                  My Listings
+                </p>
+              </div>
+              <div className="px-4 py-3 @container">
+                <div className="flex items-center justify-center h-64">
+                  <p className="text-red-500 text-lg">Error: {error}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative flex size-full min-h-screen flex-col bg-white group/design-root overflow-x-hidden" style={{fontFamily: 'Inter, "Noto Sans", sans-serif'}}>
       <div className="layout-container flex h-full grow flex-col">
@@ -61,116 +127,35 @@ export default function Dashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr className="border-t border-t-[#dde1e3] hover:bg-[#f8f9fa] transition-colors duration-200 cursor-pointer">
-                      <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-120 h-[72px] px-4 py-2 w-[470px] text-[#121416] text-sm font-normal leading-normal" style={{paddingLeft: 'calc(1rem + 10px)'}}>
-                        123 Elm Street, Anytown, CA
-                      </td>
-                      <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-240 h-[72px] px-4 py-2 w-[400px] text-[#6a7681] text-sm font-normal leading-normal">
-                        $500,000
-                      </td>
-                      <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-480 h-[72px] px-4 py-2 w-[400px] text-[#6a7681] text-sm font-normal leading-normal">
-                        $600,000
-                      </td>
-                      <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-360 h-[72px] px-4 py-2 w-[400px] text-[#6a7681] text-sm font-normal leading-normal">
-                        2023-08-15
-                      </td>
-                      <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-536 h-[72px] px-4 py-2 w-14 text-sm font-normal leading-normal" style={{paddingRight: 'calc(1rem + 10px)'}}>
-                        <div
-                          className="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10"
-                          style={{
-                            backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDKKFEWlJmCA4HDzg9PTJQC2o6BWYjuIiMG6CvNJQhUhibiHo2T-rbWGzuEyd11BGY31W1FYSxbd5I8EK-OjfXAQnyUJjV-WZlDUuT06WrlYipUEjIDqUPxwtTfDA0_PC-uH8jwb6sxQ2JuJqMwLnhYSWgFvCLFyNy8HJZ0LveGam3een63h90kPmEoXv3FEHlkx3d5OJs8Xpo0oCDWrfPh5A1LG_EK_hWmGf5Sr9kaNxLdm6HljJwP5Fo5RAEQmxQrnehBp5DLP9XM")'
-                          }}
-                        />
-                      </td>
-                    </tr>
-                    <tr className="border-t border-t-[#dde1e3] hover:bg-[#f8f9fa] transition-colors duration-200 cursor-pointer">
-                      <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-120 h-[72px] px-4 py-2 w-[470px] text-[#121416] text-sm font-normal leading-normal" style={{paddingLeft: 'calc(1rem + 10px)'}}>
-                        456 Oak Avenue, Anytown, CA
-                      </td>
-                      <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-240 h-[72px] px-4 py-2 w-[400px] text-[#6a7681] text-sm font-normal leading-normal">
-                        $750,000
-                      </td>
-                      <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-480 h-[72px] px-4 py-2 w-[400px] text-[#6a7681] text-sm font-normal leading-normal">
-                        $900,000
-                      </td>
-                      <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-360 h-[72px] px-4 py-2 w-[400px] text-[#6a7681] text-sm font-normal leading-normal">
-                        2023-09-20
-                      </td>
-                      <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-536 h-[72px] px-4 py-2 w-14 text-sm font-normal leading-normal" style={{paddingRight: 'calc(1rem + 10px)'}}>
-                        <div
-                          className="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10"
-                          style={{
-                            backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuBp7BMbgqab4zPNIWTMoEfsefmJ3Dvi-SUBy9L9qLCLpK9XrOXDlLH1yBN29HfPk0KGmyIrv71NGuPDi224xFLHJ0uGNbc9WQv0kVTOv-M8BNIlRUWKpeT4AbuOw4M6xm9YOtI7bUwftS6M5TKlmwX85ow_FgidljBcOyQ-dk6cB5YcD5oR50i7_oZIu5TiyzJrWgBptRjyggGDZj9sfnQj9eq2anxHm6Z8nJqx5KeNMp1RdfzlO6d8uLVhdhUCq0Pe3t2xy9tSgFga")'
-                          }}
-                        />
-                      </td>
-                    </tr>
-                    <tr className="border-t border-t-[#dde1e3] hover:bg-[#f8f9fa] transition-colors duration-200 cursor-pointer">
-                      <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-120 h-[72px] px-4 py-2 w-[470px] text-[#121416] text-sm font-normal leading-normal" style={{paddingLeft: 'calc(1rem + 10px)'}}>
-                        789 Pine Lane, Anytown, CA
-                      </td>
-                      <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-240 h-[72px] px-4 py-2 w-[400px] text-[#6a7681] text-sm font-normal leading-normal">
-                        $600,000
-                      </td>
-                      <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-480 h-[72px] px-4 py-2 w-[400px] text-[#6a7681] text-sm font-normal leading-normal">
-                        $700,000
-                      </td>
-                      <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-360 h-[72px] px-4 py-2 w-[400px] text-[#6a7681] text-sm font-normal leading-normal">
-                        2023-10-05
-                      </td>
-                      <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-536 h-[72px] px-4 py-2 w-14 text-sm font-normal leading-normal" style={{paddingRight: 'calc(1rem + 10px)'}}>
-                        <div
-                          className="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10"
-                          style={{
-                            backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuBFzRo9J8c-q6FOtD-sscW9RLUdmz5cMzvAnXXHvHPQVX5yz0Gt0ecjKg_LTZtaR4fEfp2vpAF2W7MMvDIHIU0kXUwqh4z4DZ6M9ZetSQ8d0V9rP9PLL5_Pw3FejE9xpQoeUfu14HmyewkHaaz5MAXFtjKWjbfjkAK7KNjBOYvhf59H2P2RIrOeO55Luzqr2vFH6-GjMeyqV7srOn8qfuCtIrtPJnOZvHgeRTfNSWO5j_1466-Fj4EfxSZtWm0y7Gna-hHdn27dJ_P4")'
-                          }}
-                        />
-                      </td>
-                    </tr>
-                    <tr className="border-t border-t-[#dde1e3] hover:bg-[#f8f9fa] transition-colors duration-200 cursor-pointer">
-                      <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-120 h-[72px] px-4 py-2 w-[470px] text-[#121416] text-sm font-normal leading-normal" style={{paddingLeft: 'calc(1rem + 10px)'}}>
-                        101 Maple Drive, Anytown, CA
-                      </td>
-                      <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-240 h-[72px] px-4 py-2 w-[400px] text-[#6a7681] text-sm font-normal leading-normal">
-                        $400,000
-                      </td>
-                      <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-480 h-[72px] px-4 py-2 w-[400px] text-[#6a7681] text-sm font-normal leading-normal">
-                        $500,000
-                      </td>
-                      <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-360 h-[72px] px-4 py-2 w-[400px] text-[#6a7681] text-sm font-normal leading-normal">
-                        2023-11-12
-                      </td>
-                      <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-536 h-[72px] px-4 py-2 w-14 text-sm font-normal leading-normal" style={{paddingRight: 'calc(1rem + 10px)'}}>
-                        <div
-                          className="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10"
-                          style={{
-                            backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuChemRawzS85F24gcuSAfcItYCfhOgo5hP6cOjisHaznrNc2qkilT83NZxrIekgen_GyknqUkykUc6c7p-ZXaiN12tVASg73FPIl1HePsgDURbjeQvHmbK_SwrF7Fc4AdcthRR-lOwnNzV_QTr2-e-jSVKD98Gwt0T-RNBt3HWopM2WQYf_hHCJJ5ttXtsfy5ddcamJzUeQqM5-1ZdYqfyWN4zIw9K8aKC8GUE6lV5DXWAjlPNRUU1pM15X30xbMZyEH7qmbU0RdQuh")'
-                          }}
-                        />
-                      </td>
-                    </tr>
-                    <tr className="border-t border-t-[#dde1e3] hover:bg-[#f8f9fa] transition-colors duration-200 cursor-pointer">
-                      <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-120 h-[72px] px-4 py-2 w-[470px] text-[#121416] text-sm font-normal leading-normal" style={{paddingLeft: 'calc(1rem + 10px)'}}>
-                        222 Cedar Court, Anytown, CA
-                      </td>
-                      <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-240 h-[72px] px-4 py-2 w-[400px] text-[#6a7681] text-sm font-normal leading-normal">
-                        $900,000
-                      </td>
-                      <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-480 h-[72px] px-4 py-2 w-[400px] text-[#6a7681] text-sm font-normal leading-normal">
-                        $1,100,000
-                      </td>
-                      <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-360 h-[72px] px-4 py-2 w-[400px] text-[#6a7681] text-sm font-normal leading-normal">
-                        2023-12-01
-                      </td>
-                      <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-536 h-[72px] px-4 py-2 w-14 text-sm font-normal leading-normal" style={{paddingRight: 'calc(1rem + 10px)'}}>
-                        <div
-                          className="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10"
-                          style={{
-                            backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAKBkwTATRbPrI7yGBGjuVjYW7Jc1lrX9EdzxiDoVEIy_fwZWXCVIOHoK7bWm-TSCjXkfCBLCJ7510zIbdfWhOhbzi4lkUrv1NDBs8S41ENaH84Doj0Q2TmEnO8GPvW6AIRWP87DJWUCQ6X47IXyGyOALo3-TbNR_rMOzSiLUR2oXBM5rZK2gpkypR_8hP9ehhQixClj6svseo-Sf55EJ80HU5olJph5t2xoNCwZ9eKdyfLmDd5dHjjkyRgzirNjy9-hvsLglZlle8o")'
-                          }}
-                        />
-                      </td>
-                    </tr>
+                    {user_properties.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="h-[72px] px-4 py-2 text-center text-[#6a7681] text-sm">
+                          No properties found. <Link href="/create_listing" className="text-blue-600 hover:underline">Create your first listing</Link>
+                        </td>
+                      </tr>
+                    ) : (
+                      user_properties.map((property) => (
+                        <tr key={property.id} className="border-t border-t-[#dde1e3] hover:bg-[#f8f9fa] transition-colors duration-200 cursor-pointer">
+                          <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-120 h-[72px] px-4 py-2 w-[470px] text-[#121416] text-sm font-normal leading-normal" style={{paddingLeft: 'calc(1rem + 10px)'}}>
+                            {property.address}
+                          </td>
+                          <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-240 h-[72px] px-4 py-2 w-[400px] text-[#6a7681] text-sm font-normal leading-normal">
+                            {formatCurrency(property.asking_price)}
+                          </td>
+                          <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-480 h-[72px] px-4 py-2 w-[400px] text-[#6a7681] text-sm font-normal leading-normal">
+                            {formatCurrency(property.estimated_after_repair_value)}
+                          </td>
+                          <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-360 h-[72px] px-4 py-2 w-[400px] text-[#6a7681] text-sm font-normal leading-normal">
+                            {formatDate(property.created_at)}
+                          </td>
+                          <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-536 h-[72px] px-4 py-2 w-14 text-sm font-normal leading-normal" style={{paddingRight: 'calc(1rem + 10px)'}}>
+                            <div
+                              className="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 bg-gray-200"
+                            />
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
