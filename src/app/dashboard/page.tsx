@@ -71,7 +71,7 @@ export default function Dashboard() {
             <div className="layout-content-container flex flex-col max-w-[960px] flex-1">
               <div className="flex flex-wrap justify-between gap-3 p-4" style={{marginLeft: '-70px'}}>
                 <p className="text-[#121416] tracking-light text-[32px] font-bold leading-tight min-w-72">
-                  My Listings
+                  My Sheets
                 </p>
               </div>
               <div className="px-4 py-3 @container">
@@ -94,7 +94,7 @@ export default function Dashboard() {
             <div className="layout-content-container flex flex-col max-w-[960px] flex-1">
               <div className="flex flex-wrap justify-between gap-3 p-4" style={{marginLeft: '-70px'}}>
                 <p className="text-[#121416] tracking-light text-[32px] font-bold leading-tight min-w-72">
-                  My Listings
+                  My Sheets
                 </p>
               </div>
               <div className="px-4 py-3 @container">
@@ -116,36 +116,63 @@ export default function Dashboard() {
           <div className="layout-content-container flex flex-col max-w-[960px] flex-1">
             <div className="flex flex-wrap justify-between gap-3 p-4" style={{marginLeft: '-70px'}}>
               <p className="text-[#121416] tracking-light text-[32px] font-bold leading-tight min-w-72">
-                My Listings
+                My Sheets
               </p>
+              {user_properties.length > 0 && (
+              <Link href="/create_listing">
+                <button
+                  className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-[#0b80ee] text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-[#0a6fd8] transition-colors"
+                  type="button"
+                >
+                  New +
+                </button>
+              </Link>
+              )}
             </div>
             <div className="px-4 py-3 @container">
               <div className="flex overflow-hidden rounded-xl border border-[#dde1e3] bg-white" style={{width: 'calc(100% + 100px)', marginLeft: '-70px', marginRight: '-30px'}}>
                 <table className="flex-1">
-                  <thead>
-                    <tr className="bg-white">
-                      <th className="table-188b8896-1743-47e5-8b64-704438784ff3-column-120 px-4 py-3 text-left text-[#121416] w-[470px] text-sm font-medium leading-normal" style={{paddingLeft: 'calc(1rem + 10px)'}}>
-                        Address
-                      </th>
-                      <th className="table-188b8896-1743-47e5-8b64-704438784ff3-column-240 px-4 py-3 text-left text-[#121416] w-[400px] text-sm font-medium leading-normal">
-                        Asking Price
-                      </th>
-                      <th className="table-188b8896-1743-47e5-8b64-704438784ff3-column-480 px-4 py-3 text-left text-[#121416] w-[400px] text-sm font-medium leading-normal">
-                        After Repair Value
-                      </th>
-                      <th className="table-188b8896-1743-47e5-8b64-704438784ff3-column-360 px-4 py-3 text-left text-[#121416] w-[400px] text-sm font-medium leading-normal">
-                        Day Added
-                      </th>
-                      <th className="table-188b8896-1743-47e5-8b64-704438784ff3-column-536 px-4 py-3 text-left text-[#121416] w-14 text-sm font-medium leading-normal" style={{paddingRight: 'calc(1rem + 10px)'}}>
-                        Images
-                      </th>
-                    </tr>
-                  </thead>
+                  {user_properties.length > 0 && (
+                    <thead>
+                      <tr className="bg-white">
+                        <th className="table-188b8896-1743-47e5-8b64-704438784ff3-column-120 px-4 py-3 text-left text-[#121416] w-[470px] text-sm font-medium leading-normal" style={{paddingLeft: 'calc(1rem + 10px)'}}>
+                          Address
+                        </th>
+                        <th className="table-188b8896-1743-47e5-8b64-704438784ff3-column-240 px-4 py-3 text-left text-[#121416] w-[400px] text-sm font-medium leading-normal">
+                          Asking Price
+                        </th>
+                        <th className="table-188b8896-1743-47e5-8b64-704438784ff3-column-480 px-4 py-3 text-left text-[#121416] w-[400px] text-sm font-medium leading-normal">
+                          After Repair Value
+                        </th>
+                        <th className="table-188b8896-1743-47e5-8b64-704438784ff3-column-360 px-4 py-3 text-left text-[#121416] w-[400px] text-sm font-medium leading-normal">
+                          Day Added
+                        </th>
+                        <th className="table-188b8896-1743-47e5-8b64-704438784ff3-column-536 px-4 py-3 text-left text-[#121416] w-14 text-sm font-medium leading-normal" style={{paddingRight: 'calc(1rem + 10px)'}}>
+                          Images
+                        </th>
+                      </tr>
+                    </thead>
+                  )}
                   <tbody>
                     {user_properties.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="h-[72px] px-4 py-2 text-center text-[#6a7681] text-sm">
-                          No properties found. <Link href="/create_listing" className="text-blue-600 hover:underline">Create your first listing</Link>
+                        <td colSpan={5} className="py-16 px-4">
+                          <div className="flex flex-col items-center justify-center gap-4">
+                            <Link href="/create_listing">
+                              <div className="rounded-full bg-[#f0f2f5] flex items-center justify-center w-20 h-20 mb-2 hover:bg-[#e4e6e9] transition-colors cursor-pointer">
+                                <svg width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="#0b80ee" strokeWidth="1.5">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                                </svg>
+                              </div>
+                            </Link>
+                            <div className="text-[#121416] text-lg font-semibold">No sheets yet</div>
+                            <div className="text-[#6a7681] text-sm mb-2">Get started by creating your first sheet.</div>
+                            <Link href="/create_listing">
+                              <button className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-[#0b80ee] text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-[#0a6fd8] transition-colors" type="button">
+                                New +
+                              </button>
+                            </Link>
+                          </div>
                         </td>
                       </tr>
                     ) : (
@@ -165,16 +192,17 @@ export default function Dashboard() {
                           </td>
                           <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-536 h-[72px] px-4 py-2 w-14 text-sm font-normal leading-normal" style={{paddingRight: 'calc(1rem + 10px)'}}>
                             {propertyImages[property.id] && propertyImages[property.id].length > 0 ? (
-                              <div
-                                className="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10"
-                                style={{
-                                  backgroundImage: `url(${propertyImages[property.id][0].image_url})`
-                                }}
-                              />
+                              <div className="flex items-center">
+                                {propertyImages[property.id].slice(0, 3).map((img, idx) => (
+                                  <div
+                                    key={img.id}
+                                    className={`bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 border-2 border-white ${idx !== 0 ? '-ml-4' : ''}`}
+                                    style={{ backgroundImage: `url(${img.image_url})` }}
+                                  />
+                                ))}
+                              </div>
                             ) : (
-                              <div
-                                className="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 bg-gray-200"
-                              />
+                              <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 bg-gray-200" />
                             )}
                           </td>
                         </tr>
