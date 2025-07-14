@@ -3,10 +3,12 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { getUserProperties } from '../../lib/read_properties';
-import { Property } from '../../types/database';
+import { getPropertyImages } from '../../lib/read_property_images';
+import { Property, PropertyImage } from '../../types/database';
 
 export default function Dashboard() {
   const [user_properties, setUserProperties] = useState<Property[]>([]);
+  const [propertyImages, setPropertyImages] = useState<Record<string, PropertyImage[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -17,6 +19,19 @@ export default function Dashboard() {
         setError(null);
         const properties = await getUserProperties();
         setUserProperties(properties);
+
+        // Fetch images for each property
+        const imagesMap: Record<string, PropertyImage[]> = {};
+        for (const property of properties) {
+          try {
+            const images = await getPropertyImages(property.id);
+            imagesMap[property.id] = images;
+          } catch (err) {
+            console.error(`Error fetching images for property ${property.id}:`, err);
+            imagesMap[property.id] = [];
+          }
+        }
+        setPropertyImages(imagesMap);
       } catch (err) {
         console.error('Error fetching user properties:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch properties');
@@ -149,9 +164,18 @@ export default function Dashboard() {
                             {formatDate(property.created_at)}
                           </td>
                           <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-536 h-[72px] px-4 py-2 w-14 text-sm font-normal leading-normal" style={{paddingRight: 'calc(1rem + 10px)'}}>
-                            <div
-                              className="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 bg-gray-200"
-                            />
+                            {propertyImages[property.id] && propertyImages[property.id].length > 0 ? (
+                              <div
+                                className="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10"
+                                style={{
+                                  backgroundImage: `url(${propertyImages[property.id][0].image_url})`
+                                }}
+                              />
+                            ) : (
+                              <div
+                                className="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 bg-gray-200"
+                              />
+                            )}
                           </td>
                         </tr>
                       ))
