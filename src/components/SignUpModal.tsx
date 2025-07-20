@@ -108,7 +108,7 @@ export default function SignUpModal({ isOpen, onClose, onSuccess, onSwitchToLogi
           // Success - both user and property created
           onSuccess?.();
           onClose();
-          router.push('/dashboard');
+          router.push(`/property_page?id=${property.id}`);
         } catch (propertyError: any) {
           setError(`Account created successfully, but failed to create property: ${propertyError.message}`);
           // Still close modal and redirect since user was created

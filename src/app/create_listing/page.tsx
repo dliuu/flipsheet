@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { createPropertyWithPhotos } from '../../lib/database';
 import { isAuthenticated, signOut } from '../../lib/auth';
 import SignUpModal from '../../components/SignUpModal';
@@ -29,6 +30,7 @@ interface PendingProperty {
 }
 
 export default function CreateListingPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -158,30 +160,8 @@ export default function CreateListingPage() {
         phone_number: formData.phoneNumber
       }, photos);
 
-      // Show success message
-      alert('Property listed successfully!');
-      
-      // Reset form
-      setFormData({
-        title: '',
-        description: '',
-        address: '',
-        propertyType: '',
-        askingPrice: '',
-        estimatedAfterRepairValue: '',
-        estimatedClosingCosts: '',
-        estimatedAsIsValue: '',
-        rehabCost: '',
-        rehabDurationMonths: '',
-        bedrooms: '',
-        bathrooms: '',
-        squareFootage: '',
-        lotSize: '',
-        contactEmail: '',
-        phoneNumber: ''
-      });
-      setPhotos([]);
-      setPhotoUrls([]);
+      // Redirect to the property page
+      router.push(`/property_page?id=${property.id}`);
       
     } catch (error: any) {
       const errorMessage = error.message || 'Error creating property. Please try again.';
