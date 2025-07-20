@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { getSession } from '@/lib/auth';
 import { useAuth } from '@/lib/auth/useAuth';
@@ -11,6 +11,7 @@ export default function AnalyzePropertyPage() {
   const searchParams = useSearchParams();
   const propertyParam = searchParams.get('property');
   const { user } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [isConnected, setIsConnected] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -21,6 +22,8 @@ export default function AnalyzePropertyPage() {
   const [showContactModal, setShowContactModal] = useState(false);
   const [userContact, setUserContact] = useState('');
   const [message, setMessage] = useState('');
+  const [uploadedPhotos, setUploadedPhotos] = useState<File[]>([]);
+  const [uploadedPhotoUrls, setUploadedPhotoUrls] = useState<string[]>([]);
 
   // Check if current user is the property owner
   const isPropertyOwner = user && property && user.id === property.user_id;
@@ -98,6 +101,38 @@ export default function AnalyzePropertyPage() {
     e.preventDefault();
     // TODO: Implement email functionality
     handleCloseModal();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    
+    // Filter for image files
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+    
+    // Limit to 10 additional photos
+    const remainingSlots = 10 - uploadedPhotos.length;
+    const newPhotos = imageFiles.slice(0, remainingSlots);
+    
+    if (newPhotos.length > 0) {
+      const updatedPhotos = [...uploadedPhotos, ...newPhotos];
+      setUploadedPhotos(updatedPhotos);
+      
+      // Create preview URLs
+      const newUrls = newPhotos.map(file => URL.createObjectURL(file));
+      setUploadedPhotoUrls(prev => [...prev, ...newUrls]);
+    }
+  };
+
+  const removeUploadedPhoto = (index: number) => {
+    const updatedPhotos = uploadedPhotos.filter((_, i) => i !== index);
+    const updatedUrls = uploadedPhotoUrls.filter((_, i) => i !== index);
+    
+    setUploadedPhotos(updatedPhotos);
+    setUploadedPhotoUrls(updatedUrls);
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
   };
 
   // Auto-rotate images every 7 seconds if there are images
@@ -222,24 +257,68 @@ export default function AnalyzePropertyPage() {
             )}
 
             {/* Image Gallery */}
-            {propertyImages.length > 0 && (
-              <div className="flex overflow-y-auto [-ms-scrollbar-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-4 mt-6">
-                <div className="flex items-stretch gap-3">
-                  {propertyImages.map((image, index) => (
-                    <div key={image.id} className="flex h-full flex-1 flex-col gap-4 rounded-lg min-w-36">
+            <div className="flex overflow-x-auto [-ms-scrollbar-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-4 mt-6">
+              <div className="flex items-stretch gap-3">
+                {propertyImages.map((image, index) => (
+                  <div key={image.id} className="flex h-full flex-1 flex-col gap-4 rounded-lg min-w-36 flex-shrink-0">
+                    <div
+                      className={`w-full bg-center bg-no-repeat aspect-video bg-cover rounded-xl flex flex-col cursor-pointer transition-all duration-200 hover:scale-105 ${
+                        selectedImage === index ? 'ring-2 ring-blue-500 ring-offset-2' : ''
+                      }`}
+                      style={{backgroundImage: `url("${image.image_url}")`}}
+                      onClick={() => handleImageClick(index)}
+                    ></div>
+                    <p className="text-[#111518] text-base font-medium leading-normal">Image {index + 1}</p>
+                  </div>
+                ))}
+                
+                {/* Uploaded Photos */}
+                {uploadedPhotoUrls.map((url, index) => (
+                  <div key={`uploaded-${index}`} className="flex h-full flex-1 flex-col gap-4 rounded-lg min-w-36 flex-shrink-0">
+                    <div className="relative group">
                       <div
-                        className={`w-full bg-center bg-no-repeat aspect-video bg-cover rounded-xl flex flex-col cursor-pointer transition-all duration-200 hover:scale-105 ${
-                          selectedImage === index ? 'ring-2 ring-blue-500 ring-offset-2' : ''
-                        }`}
-                        style={{backgroundImage: `url("${image.image_url}")`}}
-                        onClick={() => handleImageClick(index)}
+                        className="w-full bg-center bg-no-repeat aspect-video bg-cover rounded-xl flex flex-col cursor-pointer transition-all duration-200 hover:scale-105"
+                        style={{backgroundImage: `url("${url}")`}}
                       ></div>
-                      <p className="text-[#111518] text-base font-medium leading-normal">Image {index + 1}</p>
+                      <button
+                        type="button"
+                        onClick={() => removeUploadedPhoto(index)}
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        ×
+                      </button>
                     </div>
-                  ))}
-                </div>
+                    <p className="text-[#111518] text-base font-medium leading-normal">Uploaded {index + 1}</p>
+                  </div>
+                ))}
+                
+                {/* Upload Button */}
+                {uploadedPhotos.length < 10 && (
+                  <div className="flex h-full flex-1 flex-col gap-4 rounded-lg min-w-36 flex-shrink-0">
+                    <div 
+                      className="w-full aspect-video bg-[#f1f2f4] border-2 border-dashed border-[#dde1e3] rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all duration-200 hover:bg-[#e5e7eb] hover:border-[#c1c5c9]"
+                      onClick={handleUploadClick}
+                    >
+                      <div className="text-center space-y-2">
+                        <div className="text-2xl text-[#6a7681]">+</div>
+                        <div className="text-sm text-[#6a7681] font-medium">Add Photo</div>
+                      </div>
+                    </div>
+                    <p className="text-[#111518] text-base font-medium leading-normal">Upload</p>
+                  </div>
+                )}
+                
+                {/* Hidden file input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
               </div>
-            )}
+            </div>
 
             {/* Property Details */}
             <h3 className="text-[#111518] text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4">Property Details</h3>
