@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { getSession } from '@/lib/auth';
+import { useAuth } from '@/lib/auth/useAuth';
 import { getPropertyById } from '@/lib/read_properties';
 import { getPropertyImages } from '@/lib/read_property_images';
 import { Property, PropertyImage } from '@/types/database';
@@ -10,6 +11,7 @@ import { Property, PropertyImage } from '@/types/database';
 export default function PropertyPage() {
   const searchParams = useSearchParams();
   const propertyId = searchParams.get('id');
+  const { user } = useAuth();
   
   const [isConnected, setIsConnected] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -20,6 +22,9 @@ export default function PropertyPage() {
   const [showContactModal, setShowContactModal] = useState(false);
   const [userContact, setUserContact] = useState('');
   const [message, setMessage] = useState('');
+
+  // Check if current user is the property owner
+  const isPropertyOwner = user && property && user.id === property.user_id;
 
   useEffect(() => {
     checkConnection();
@@ -162,15 +167,57 @@ export default function PropertyPage() {
 
   return (
     <div className="relative flex size-full min-h-screen flex-col bg-white group/design-root overflow-x-hidden" style={{fontFamily: 'Inter, "Noto Sans", sans-serif'}}>
+      {/* Floating Edit Button - Only visible to property owner */}
+      {isPropertyOwner && (
+        <div className="fixed top-18 right-6 z-50">
+          <button 
+            onClick={() => {
+              // Navigate to analyze_property page with the current property
+              const url = `/analyze_property?property=${encodeURIComponent(JSON.stringify(property))}`;
+              window.location.href = url;
+            }}
+            className="flex items-center justify-center px-6 py-3 bg-[#f0f2f5] text-[#111518] text-base font-bold leading-normal tracking-[0.015em] hover:bg-[#e4e6e9] transition-all duration-200 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            <span>Edit</span>
+          </button>
+        </div>
+      )}
       <div className="layout-container flex h-full grow flex-col">
         <div className="px-40 flex flex-1 justify-center py-5">
           <div className="layout-content-container flex flex-col max-w-[960px] flex-1">
+            {/* Property Title */}
+            <h1 className="text-[#111518] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 text-left pb-3 pt-5">
+              {property.title}
+            </h1>
+
+            {/* Property Description */}
+            {property.description && (
+              <p className="text-[#111518] text-base font-normal leading-normal pb-3 pt-1 px-4">
+                {property.description}
+              </p>
+            )}
+
+            {/* Main Image */}
+            {propertyImages.length > 0 && (
+              <div className="flex w-full grow bg-white @container py-3 px-4">
+                <div className="w-full gap-1 overflow-hidden bg-white @[480px]:gap-2 aspect-[3/2] flex max-w-[864px]">
+                  <div
+                    className="w-full bg-center bg-no-repeat bg-cover aspect-auto rounded-none flex-1 transition-all duration-700 ease-in-out"
+                    style={{backgroundImage: `url("${propertyImages[selectedImage]?.image_url}")`}}
+                  ></div>
+                </div>
+              </div>
+            )}
+
             {/* Image Gallery */}
             {propertyImages.length > 0 && (
-              <div className="flex overflow-y-auto [-ms-scrollbar-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <div className="flex items-stretch p-4 gap-3">
+              <div className="flex overflow-y-auto [-ms-scrollbar-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-4 mt-6">
+                <div className="flex items-stretch gap-3">
                   {propertyImages.map((image, index) => (
-                    <div key={image.id} className="flex h-full flex-1 flex-col gap-4 rounded-lg min-w-40">
+                    <div key={image.id} className="flex h-full flex-1 flex-col gap-4 rounded-lg min-w-36">
                       <div
                         className={`w-full bg-center bg-no-repeat aspect-video bg-cover rounded-xl flex flex-col cursor-pointer transition-all duration-200 hover:scale-105 ${
                           selectedImage === index ? 'ring-2 ring-blue-500 ring-offset-2' : ''
@@ -183,30 +230,6 @@ export default function PropertyPage() {
                   ))}
                 </div>
               </div>
-            )}
-
-            {/* Main Image */}
-            {propertyImages.length > 0 && (
-              <div className="flex w-full grow bg-white @container py-3">
-                <div className="w-full gap-1 overflow-hidden bg-white @[480px]:gap-2 aspect-[3/2] flex">
-                  <div
-                    className="w-full bg-center bg-no-repeat bg-cover aspect-auto rounded-none flex-1 transition-all duration-700 ease-in-out"
-                    style={{backgroundImage: `url("${propertyImages[selectedImage]?.image_url}")`}}
-                  ></div>
-                </div>
-              </div>
-            )}
-
-            {/* Property Title */}
-            <h1 className="text-[#111518] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 text-left pb-3 pt-5">
-              {property.title}
-            </h1>
-
-            {/* Property Description */}
-            {property.description && (
-              <p className="text-[#111518] text-base font-normal leading-normal pb-3 pt-1 px-4">
-                {property.description}
-              </p>
             )}
 
             {/* Property Details */}
