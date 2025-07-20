@@ -6,6 +6,23 @@ import { getSession } from '@/lib/auth';
 import { useAuth } from '@/lib/auth/useAuth';
 import { getPropertyImages } from '@/lib/read_property_images';
 import { Property, PropertyImage } from '@/types/database';
+import {
+  calculateSellingCosts,
+  calculateSaleProceeds,
+  calculateTotalProfit,
+  calculateTotalROI,
+  calculateAnnualizedROI,
+  calculateDownPayment,
+  calculateCapitalNeeded,
+  calculateRehabDurationMonths,
+  calculateRehabCost,
+  calculatePostTaxProfit,
+} from '@/lib/analysis_calculations/flip_calc';
+
+// Utility to determine if any input has decimals
+function shouldShowDecimals(...values: number[]): boolean {
+  return values.some(val => !Number.isInteger(val));
+}
 
 export default function AnalyzePropertyPage() {
   const searchParams = useSearchParams();
@@ -24,6 +41,62 @@ export default function AnalyzePropertyPage() {
   const [message, setMessage] = useState('');
   const [uploadedPhotos, setUploadedPhotos] = useState<File[]>([]);
   const [uploadedPhotoUrls, setUploadedPhotoUrls] = useState<string[]>([]);
+
+  // Editable property financial fields (default to property values or 0)
+  const [purchasePrice, setPurchasePrice] = useState(property?.asking_price || 0);
+  const [closingCosts, setClosingCosts] = useState(property?.estimated_closing_costs || 0);
+  const [rehabCosts, setRehabCosts] = useState(property?.rehab_cost || 0);
+  const [afterRepairValue, setAfterRepairValue] = useState(property?.estimated_after_repair_value || 0);
+  const [interiorSqft, setInteriorSqft] = useState(property?.interior_sqft || 0);
+  const [taxRate, setTaxRate] = useState(0.25); // Default 25%
+
+  // Calculation results
+  const [sellingCosts, setSellingCosts] = useState(0);
+  const [saleProceeds, setSaleProceeds] = useState(0);
+  const [totalInvestment, setTotalInvestment] = useState(0);
+  const [downPayment, setDownPayment] = useState(0);
+  const [capitalNeeded, setCapitalNeeded] = useState(0);
+  const [totalProfit, setTotalProfit] = useState(0);
+  const [totalROI, setTotalROI] = useState(0);
+  const [annualizedROI, setAnnualizedROI] = useState(0);
+  const [postTaxProfit, setPostTaxProfit] = useState(0);
+
+  // Compute showDecimals flag based on all relevant inputs
+  const showDecimals = shouldShowDecimals(
+    purchasePrice, closingCosts, rehabCosts, afterRepairValue, interiorSqft, taxRate * 100
+  );
+
+  // Recalculate all outputs when any input changes
+  useEffect(() => {
+    const _sellingCosts = calculateSellingCosts(afterRepairValue);
+    setSellingCosts(_sellingCosts);
+
+    const _saleProceeds = calculateSaleProceeds(afterRepairValue, _sellingCosts);
+    setSaleProceeds(_saleProceeds);
+
+    const _totalInvestment = purchasePrice + closingCosts + rehabCosts;
+    setTotalInvestment(_totalInvestment);
+
+    const _downPayment = calculateDownPayment(purchasePrice);
+    setDownPayment(_downPayment);
+
+    const _capitalNeeded = calculateCapitalNeeded(_totalInvestment, _downPayment);
+    setCapitalNeeded(_capitalNeeded);
+
+    const _totalProfit = calculateTotalProfit(_saleProceeds, _totalInvestment);
+    setTotalProfit(_totalProfit);
+
+    const _totalROI = calculateTotalROI(_totalProfit, _totalInvestment);
+    setTotalROI(_totalROI);
+
+    // Use property.rehab_duration_months if available, else 0
+    const months = property?.rehab_duration_months || 0;
+    const _annualizedROI = calculateAnnualizedROI(_totalROI, months);
+    setAnnualizedROI(_annualizedROI);
+
+    const _postTaxProfit = calculatePostTaxProfit(_totalProfit, taxRate);
+    setPostTaxProfit(_postTaxProfit);
+  }, [purchasePrice, closingCosts, rehabCosts, afterRepairValue, interiorSqft, taxRate, property?.rehab_duration_months]);
 
   // Check if current user is the property owner
   const isPropertyOwner = user && property && user.id === property.user_id;
@@ -184,12 +257,6 @@ export default function AnalyzePropertyPage() {
   }
 
   // Calculate financial metrics
-  const totalInvestment = (property?.asking_price || 0) + (property?.estimated_closing_costs || 0) + (property?.rehab_cost || 0);
-  const totalProfit = (property?.estimated_after_repair_value || 0) - totalInvestment;
-  const totalROI = totalInvestment > 0 ? (totalProfit / totalInvestment) * 100 : 0;
-  const annualizedROI = property?.rehab_duration_months && property.rehab_duration_months > 0 
-    ? (totalROI / property.rehab_duration_months) * 12 
-    : 0;
   const profitPerSqft = property?.interior_sqft && property.interior_sqft > 0 
     ? totalProfit / property.interior_sqft 
     : 0;
@@ -223,21 +290,21 @@ export default function AnalyzePropertyPage() {
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-[#111518] text-sm font-medium">Capital Needed</span>
-                      <span className="text-red-600 text-sm font-bold">$0</span>
+                      <span className="text-red-600 text-sm font-bold">{capitalNeeded.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: showDecimals ? 2 : 0, minimumFractionDigits: showDecimals ? 2 : 0 })}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-[#111518] text-sm font-medium">Total Profit</span>
-                      <span className="text-green-600 text-sm font-bold">$0</span>
+                      <span className="text-green-600 text-sm font-bold">{totalProfit.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: showDecimals ? 2 : 0, minimumFractionDigits: showDecimals ? 2 : 0 })}</span>
                     </div>
                   </div>
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-[#111518] text-sm font-medium">% ROI</span>
-                      <span className="text-[#111518] text-sm font-bold">0%</span>
+                      <span className="text-[#111518] text-sm font-bold">{(totalROI * 100).toLocaleString('en-US', { maximumFractionDigits: showDecimals ? 2 : 0, minimumFractionDigits: showDecimals ? 2 : 0 }) + '%'}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-[#111518] text-sm font-medium">% Annualized ROI</span>
-                      <span className="text-[#111518] text-sm font-bold">0%</span>
+                      <span className="text-[#111518] text-sm font-bold">{(annualizedROI * 100).toLocaleString('en-US', { maximumFractionDigits: showDecimals ? 2 : 0, minimumFractionDigits: showDecimals ? 2 : 0 }) + '%'}</span>
                     </div>
                   </div>
                 </div>
@@ -360,7 +427,8 @@ export default function AnalyzePropertyPage() {
                 <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block">Purchase Price</label>
                 <input 
                   type="number" 
-                  placeholder="$0"
+                  value={purchasePrice}
+                  onChange={e => setPurchasePrice(Number(e.target.value))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
                 />
               </div>
@@ -368,7 +436,8 @@ export default function AnalyzePropertyPage() {
                 <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block">Closing Costs</label>
                 <input 
                   type="number" 
-                  placeholder="$0"
+                  value={closingCosts}
+                  onChange={e => setClosingCosts(Number(e.target.value))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
                 />
               </div>
@@ -376,7 +445,8 @@ export default function AnalyzePropertyPage() {
                 <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block">Rehab Costs</label>
                 <input 
                   type="number" 
-                  placeholder="$0"
+                  value={rehabCosts}
+                  onChange={e => setRehabCosts(Number(e.target.value))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
                 />
               </div>
@@ -397,7 +467,8 @@ export default function AnalyzePropertyPage() {
                 <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block">After Repair Value</label>
                 <input 
                   type="number" 
-                  placeholder="$0"
+                  value={afterRepairValue}
+                  onChange={e => setAfterRepairValue(Number(e.target.value))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
                 />
               </div>
@@ -498,7 +569,7 @@ export default function AnalyzePropertyPage() {
                     </div>
                     <span className="text-[#111518] text-sm font-medium">After Repair Value</span>
                   </div>
-                  <span className="text-[#111518] text-sm">$0</span>
+                  <span className="text-[#111518] text-sm font-bold">{afterRepairValue.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: showDecimals ? 2 : 0, minimumFractionDigits: showDecimals ? 2 : 0 })}</span>
                 </div>
 
                 {/* Selling Costs */}
@@ -515,7 +586,7 @@ export default function AnalyzePropertyPage() {
                     </div>
                     <span className="text-[#111518] text-sm font-medium">Selling Costs</span>
                   </div>
-                  <span className="text-red-600 text-sm">-$0</span>
+                  <span className="text-red-600 text-sm font-bold">-{sellingCosts.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: showDecimals ? 2 : 0, minimumFractionDigits: showDecimals ? 2 : 0 })}</span>
                 </div>
 
                 {/* Divider */}
@@ -524,7 +595,7 @@ export default function AnalyzePropertyPage() {
                 {/* Sale Proceeds */}
                 <div className="flex justify-between items-center">
                   <span className="text-[#111518] text-sm font-medium">Sale Proceeds</span>
-                  <span className="text-[#111518] text-sm font-bold">$0</span>
+                  <span className="text-[#111518] text-sm font-bold">{saleProceeds.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: showDecimals ? 2 : 0, minimumFractionDigits: showDecimals ? 2 : 0 })}</span>
                 </div>
 
                 {/* Holding Costs */}
@@ -541,7 +612,7 @@ export default function AnalyzePropertyPage() {
                     </div>
                     <span className="text-[#111518] text-sm font-medium">Holding Costs</span>
                   </div>
-                  <span className="text-red-600 text-sm">-$0</span>
+                  <span className="text-red-600 text-sm font-bold">-{sellingCosts.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: showDecimals ? 2 : 0, minimumFractionDigits: showDecimals ? 2 : 0 })}</span>
                 </div>
 
                 {/* Invested Capital */}
@@ -558,7 +629,7 @@ export default function AnalyzePropertyPage() {
                     </div>
                     <span className="text-[#111518] text-sm font-medium">Invested Capital</span>
                   </div>
-                  <span className="text-red-600 text-sm">-$0</span>
+                  <span className="text-red-600 text-sm font-bold">{totalInvestment.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: showDecimals ? 2 : 0, minimumFractionDigits: showDecimals ? 2 : 0 })}</span>
                 </div>
 
                 {/* Divider */}
@@ -567,7 +638,7 @@ export default function AnalyzePropertyPage() {
                 {/* Total Profit */}
                 <div className="flex justify-between items-center">
                   <span className="text-[#111518] text-sm font-medium">Total Profit</span>
-                  <span className="text-green-600 text-sm font-bold">$0</span>
+                  <span className="text-green-600 text-sm font-bold">{totalProfit.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: showDecimals ? 2 : 0, minimumFractionDigits: showDecimals ? 2 : 0 })}</span>
                 </div>
 
                 {/* Tax Rate */}
@@ -586,6 +657,8 @@ export default function AnalyzePropertyPage() {
                   </div>
                   <input 
                     type="number" 
+                    value={taxRate * 100}
+                    onChange={e => setTaxRate(Number(e.target.value) / 100)}
                     placeholder="0%"
                     className="w-20 px-2 py-1 border border-gray-300 rounded text-center text-[#111518] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
@@ -597,7 +670,7 @@ export default function AnalyzePropertyPage() {
                 {/* Post-Tax Profit */}
                 <div className="flex justify-between items-center">
                   <span className="text-[#111518] text-sm font-medium">Post-Tax Profit</span>
-                  <span className="text-green-600 text-sm font-bold">$0</span>
+                  <span className="text-green-600 text-sm font-bold">{postTaxProfit.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: showDecimals ? 2 : 0, minimumFractionDigits: showDecimals ? 2 : 0 })}</span>
                 </div>
               </div>
             </div>
