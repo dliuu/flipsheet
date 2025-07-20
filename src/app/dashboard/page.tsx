@@ -1,12 +1,14 @@
 "use client";
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { getUserProperties } from '../../lib/read_properties';
 import { getPropertyImages } from '../../lib/read_property_images';
 import { Property, PropertyImage } from '../../types/database';
 
 export default function Dashboard() {
+  const router = useRouter();
   const [user_properties, setUserProperties] = useState<Property[]>([]);
   const [propertyImages, setPropertyImages] = useState<Record<string, PropertyImage[]>>({});
   const [loading, setLoading] = useState(true);
@@ -61,6 +63,11 @@ export default function Dashboard() {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
+  };
+
+  // Handle property row click
+  const handlePropertyClick = (propertyId: string) => {
+    router.push(`/property_page?id=${propertyId}`);
   };
 
   if (loading) {
@@ -177,7 +184,11 @@ export default function Dashboard() {
                       </tr>
                     ) : (
                       user_properties.map((property) => (
-                        <tr key={property.id} className="border-t border-t-[#dde1e3] hover:bg-[#f8f9fa] transition-colors duration-200 cursor-pointer">
+                        <tr 
+                          key={property.id} 
+                          className="border-t border-t-[#dde1e3] hover:bg-[#f8f9fa] transition-colors duration-200 cursor-pointer"
+                          onClick={() => handlePropertyClick(property.id)}
+                        >
                           <td className="table-188b8896-1743-47e5-8b64-704438784ff3-column-120 h-[72px] px-4 py-2 w-[470px] text-[#121416] text-sm font-normal leading-normal" style={{paddingLeft: 'calc(1rem + 10px)'}}>
                             {property.address}
                           </td>
