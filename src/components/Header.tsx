@@ -111,7 +111,7 @@ export default function Header() {
             <div className="flex items-center">
               <h1 
                 className="text-xl font-bold text-[#111518] cursor-pointer hover:text-[#0b80ee] transition-colors"
-                onClick={() => window.location.href = '/property_page'}
+                onClick={() => window.location.href = '/'}
               >
                 FlipSheet
               </h1>
