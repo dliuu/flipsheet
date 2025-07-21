@@ -189,3 +189,56 @@ export const createPropertyWithPhotos = async (
     throw new Error(error.message);
   }
 }; 
+
+// Query for an existing flip_analysis row by property_id
+export const queryFlipAnalysis = async (propertyId: string) => {
+  const { data, error } = await supabase
+    .from('flip_analysis')
+    .select('*')
+    .eq('property_id', propertyId)
+    .single();
+  if (error && error.code !== 'PGRST116') throw new Error(error.message); // PGRST116: No rows found
+  return data;
+};
+
+// Insert or update flip_analysis for a property
+export const writeFlipAnalysis = async (propertyId: string, analysisData: {
+  purchasePrice: number;
+  closingCosts: number;
+  rehabCosts: number;
+  afterRepairValue: number;
+  interiorSqft: number;
+  taxRate: number;
+}) => {
+  const existing = await queryFlipAnalysis(propertyId);
+  const row = {
+    property_id: propertyId,
+    purchase_price: analysisData.purchasePrice,
+    estimated_purchase_costs: analysisData.closingCosts,
+    estimated_rehab_costs: analysisData.rehabCosts,
+    after_repair_value: analysisData.afterRepairValue,
+    after_repair_sqft: analysisData.interiorSqft,
+    tax_rate: Math.round(analysisData.taxRate * 100),
+    updated_at: new Date().toISOString(),
+  };
+  if (existing) {
+    // Update existing row
+    const { data, error } = await supabase
+      .from('flip_analysis')
+      .update(row)
+      .eq('property_id', propertyId)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return data;
+  } else {
+    // Insert new row
+    const { data, error } = await supabase
+      .from('flip_analysis')
+      .insert(row)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return data;
+  }
+}; 

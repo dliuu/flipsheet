@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { getSession } from '@/lib/auth';
 import { useAuth } from '@/lib/auth/useAuth';
 import { getPropertyImages } from '@/lib/read_property_images';
+import { writeFlipAnalysis } from '@/lib/database';
 import { Property, PropertyImage } from '@/types/database';
 import {
   calculateSellingCosts,
@@ -49,6 +50,22 @@ export default function AnalyzePropertyPage() {
   const [afterRepairValue, setAfterRepairValue] = useState(property?.estimated_after_repair_value || 0);
   const [interiorSqft, setInteriorSqft] = useState(property?.interior_sqft || 0);
   const [taxRate, setTaxRate] = useState(0.25); // Default 25%
+
+  // Track original values to detect changes
+  const [originalValues, setOriginalValues] = useState({
+    purchasePrice: 0,
+    closingCosts: 0,
+    rehabCosts: 0,
+    afterRepairValue: 0,
+    interiorSqft: 0,
+    taxRate: 0.25,
+  });
+
+  // Save functionality states
+  const [hasChanges, setHasChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [propertyLoaded, setPropertyLoaded] = useState(false);
 
   // Calculation results
   const [sellingCosts, setSellingCosts] = useState(0);
@@ -111,6 +128,26 @@ export default function AnalyzePropertyPage() {
         const propertyData = JSON.parse(decodeURIComponent(propertyParam));
         setProperty(propertyData);
         fetchPropertyImages(propertyData.id);
+        
+        // Update current state values to match property data
+        setPurchasePrice(propertyData.asking_price || 0);
+        setClosingCosts(propertyData.estimated_closing_costs || 0);
+        setRehabCosts(propertyData.rehab_cost || 0);
+        setAfterRepairValue(propertyData.estimated_after_repair_value || 0);
+        setInteriorSqft(propertyData.interior_sqft || 0);
+        
+        // Set original values for change detection
+        setOriginalValues({
+          purchasePrice: propertyData.asking_price || 0,
+          closingCosts: propertyData.estimated_closing_costs || 0,
+          rehabCosts: propertyData.rehab_cost || 0,
+          afterRepairValue: propertyData.estimated_after_repair_value || 0,
+          interiorSqft: propertyData.interior_sqft || 0,
+          taxRate: 0.25, // Default tax rate
+        });
+        
+        // Mark property as loaded
+        setPropertyLoaded(true);
       } catch (parseError) {
         setError('Invalid property data');
         setLoading(false);
@@ -120,6 +157,22 @@ export default function AnalyzePropertyPage() {
       setLoading(false);
     }
   }, [propertyParam]);
+
+  // Detect changes by comparing current values with original values
+  useEffect(() => {
+    // Only detect changes after property has been loaded
+    if (!propertyLoaded) return;
+    
+    const changes = 
+      purchasePrice !== originalValues.purchasePrice ||
+      closingCosts !== originalValues.closingCosts ||
+      rehabCosts !== originalValues.rehabCosts ||
+      afterRepairValue !== originalValues.afterRepairValue ||
+      interiorSqft !== originalValues.interiorSqft ||
+      taxRate !== originalValues.taxRate;
+    
+    setHasChanges(changes);
+  }, [purchasePrice, closingCosts, rehabCosts, afterRepairValue, interiorSqft, taxRate, originalValues, propertyLoaded]);
 
   const checkConnection = async () => {
     try {
@@ -206,6 +259,45 @@ export default function AnalyzePropertyPage() {
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleSaveChanges = async () => {
+    if (!property || !hasChanges) return;
+    
+    setIsSaving(true);
+    setSaveSuccess(false);
+    
+    try {
+      await writeFlipAnalysis(property.id, {
+        purchasePrice,
+        closingCosts,
+        rehabCosts,
+        afterRepairValue,
+        interiorSqft,
+        taxRate,
+      });
+      
+      // Update original values to reflect saved state
+      setOriginalValues({
+        purchasePrice,
+        closingCosts,
+        rehabCosts,
+        afterRepairValue,
+        interiorSqft,
+        taxRate,
+      });
+      
+      setHasChanges(false);
+      setSaveSuccess(true);
+      
+      // Hide success message after 3 seconds
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (error: any) {
+      console.error('Error saving changes:', error);
+      // You could add a toast notification here for error handling
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Auto-rotate images every 7 seconds if there are images
@@ -653,15 +745,30 @@ export default function AnalyzePropertyPage() {
                         <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
                       </div>
                     </div>
-                    <span className="text-[#111518] text-sm font-medium">Tax Rate</span>
+                    <span className="text-[#111518] text-sm font-medium">Capital Gains Tax Rate</span>
                   </div>
-                  <input 
-                    type="number" 
-                    value={taxRate * 100}
-                    onChange={e => setTaxRate(Number(e.target.value) / 100)}
-                    placeholder="0%"
-                    className="w-20 px-2 py-1 border border-gray-300 rounded text-center text-[#111518] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                  <div className="flex items-center w-24 justify-end">
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      pattern="^\d*\.?\d*$"
+                      min={0}
+                      max={100}
+                      value={taxRate * 100}
+                      onChange={e => {
+                        let val = e.target.value.replace(/[^0-9.]/g, '');
+                        let num = Number(val);
+                        if (isNaN(num)) num = 0;
+                        if (num < 0) num = 0;
+                        if (num > 100) num = 100;
+                        setTaxRate(num / 100);
+                      }}
+                      placeholder="0"
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-right text-[#111518] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+                      style={{ MozAppearance: 'textfield' }}
+                    />
+                    <span className="ml-1 text-[#111518] text-sm font-medium select-none">%</span>
+                  </div>
                 </div>
 
                 {/* Divider */}
@@ -791,6 +898,45 @@ export default function AnalyzePropertyPage() {
           </div>
         </div>
       )}
+
+      {/* Floating Save Changes Button */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <button
+          onClick={handleSaveChanges}
+          disabled={isSaving}
+          className={`flex items-center gap-2 px-6 py-3 rounded-full shadow-lg font-semibold transition-all duration-200 ${
+            isSaving
+              ? 'bg-gray-400 text-white cursor-not-allowed'
+              : saveSuccess
+              ? 'bg-green-500 text-white hover:bg-green-600'
+              : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-xl'
+          }`}
+        >
+          {isSaving ? (
+            <>
+              <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>Saving...</span>
+            </>
+          ) : saveSuccess ? (
+            <>
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span>Saved!</span>
+            </>
+          ) : (
+            <>
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+              </svg>
+              <span>Save Changes</span>
+            </>
+          )}
+        </button>
+      </div>
     </div>
   );
 }

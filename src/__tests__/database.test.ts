@@ -22,11 +22,12 @@ jest.mock('../supabaseClient', () => ({
 
 jest.mock('../lib/auth', () => mockAuthFunctions);
 
-import { 
-  createProperty, 
-  uploadPropertyPhotos, 
+import {
+  createProperty,
+  uploadPropertyPhotos,
   createPropertyWithPhotos,
-  getPropertyPhotos 
+  getPropertyPhotos,
+  writeFlipAnalysis,
 } from '../lib/database';
 import { CreatePropertyData } from '../types/database';
 
@@ -56,7 +57,7 @@ describe('Database Functions', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Set up default mock responses
     mockSupabase.auth.getUser.mockResolvedValue({ data: { user: mockUser } });
     mockAuthFunctions.getCurrentUser.mockResolvedValue(mockUser);
@@ -163,7 +164,7 @@ describe('Database Functions', () => {
     it('should handle property not found error', async () => {
       const propertyId = 'non-existent-property';
       const mockFiles = [new File(['photo1'], 'photo1.jpg', { type: 'image/jpeg' })];
-      
+
       mockSupabase.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
@@ -333,6 +334,74 @@ describe('Database Functions', () => {
       });
 
       await expect(getPropertyPhotos(propertyId)).rejects.toThrow('Database error');
+    });
+  });
+
+  describe('writeFlipAnalysis', () => {
+    it('should write flip analysis data successfully', async () => {
+      const propertyId = 'property-123';
+      const analysisData = {
+        purchasePrice: 250000,
+        closingCosts: 10000,
+        rehabCosts: 50000,
+        afterRepairValue: 350000,
+        interiorSqft: 2150,
+        taxRate: 25,
+      };
+
+      // Simulate no existing row
+      mockSupabase.from.mockReturnValueOnce({
+        select: jest.fn().mockReturnValueOnce({
+          eq: jest.fn().mockReturnValueOnce({
+            single: jest.fn().mockResolvedValue({ data: null, error: { code: 'PGRST116' } }),
+          }),
+        }),
+      });
+      // Simulate insert
+      mockSupabase.from.mockReturnValue({
+        insert: jest.fn().mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            single: jest.fn().mockResolvedValue({ data: { id: 'analysis-1', ...analysisData }, error: null }),
+          }),
+        }),
+      });
+
+      const result = await writeFlipAnalysis(propertyId, analysisData);
+      expect(result).toMatchObject({ id: 'analysis-1', ...analysisData });
+    });
+
+    it('should update flip analysis data if row exists', async () => {
+      const propertyId = 'property-123';
+      const analysisData = {
+        purchasePrice: 250000,
+        closingCosts: 10000,
+        rehabCosts: 50000,
+        afterRepairValue: 350000,
+        interiorSqft: 2150,
+        taxRate: 25,
+      };
+
+      // Simulate existing row
+      mockSupabase.from.mockReturnValueOnce({
+        select: jest.fn().mockReturnValueOnce({
+          eq: jest.fn().mockReturnValueOnce({
+            single: jest.fn().mockResolvedValue({ data: { id: 'analysis-1' }, error: null }),
+          }),
+        }),
+      });
+      // Simulate update
+      mockSupabase.from.mockReturnValue({
+        update: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            select: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({ data: { id: 'analysis-1', ...analysisData }, error: null }),
+            }),
+          }),
+        }),
+      });
+
+      const result = await writeFlipAnalysis(propertyId, analysisData);
+      expect(result).toMatchObject({ id: 'analysis-1', ...analysisData });
     });
   });
 }); 
