@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { getSession } from '@/lib/auth';
 import { useAuth } from '@/lib/auth/useAuth';
 import { getPropertyImages } from '@/lib/read_property_images';
-import { writeFlipAnalysis } from '@/lib/database';
+import { writeFlipAnalysis, queryFlipAnalysis } from '@/lib/database';
 import { Property, PropertyImage } from '@/types/database';
 import {
   calculateSellingCosts,
@@ -123,39 +123,55 @@ export default function AnalyzePropertyPage() {
   }, []);
 
   useEffect(() => {
-    if (propertyParam) {
-      try {
-        const propertyData = JSON.parse(decodeURIComponent(propertyParam));
-        setProperty(propertyData);
-        fetchPropertyImages(propertyData.id);
-        
-        // Update current state values to match property data
-        setPurchasePrice(propertyData.asking_price || 0);
-        setClosingCosts(propertyData.estimated_closing_costs || 0);
-        setRehabCosts(propertyData.rehab_cost || 0);
-        setAfterRepairValue(propertyData.estimated_after_repair_value || 0);
-        setInteriorSqft(propertyData.interior_sqft || 0);
-        
-        // Set original values for change detection
-        setOriginalValues({
-          purchasePrice: propertyData.asking_price || 0,
-          closingCosts: propertyData.estimated_closing_costs || 0,
-          rehabCosts: propertyData.rehab_cost || 0,
-          afterRepairValue: propertyData.estimated_after_repair_value || 0,
-          interiorSqft: propertyData.interior_sqft || 0,
-          taxRate: 0.25, // Default tax rate
-        });
-        
-        // Mark property as loaded
-        setPropertyLoaded(true);
-      } catch (parseError) {
-        setError('Invalid property data');
+    const loadPropertyAndAnalysis = async () => {
+      if (propertyParam) {
+        try {
+          const propertyData = JSON.parse(decodeURIComponent(propertyParam));
+          setProperty(propertyData);
+          fetchPropertyImages(propertyData.id);
+
+          // Try to load flip_analysis for this property
+          let analysis = null;
+          try {
+            analysis = await queryFlipAnalysis(propertyData.id);
+          } catch (e) {
+            analysis = null;
+          }
+
+          setPurchasePrice(analysis?.purchase_price ?? 0);
+          setClosingCosts(analysis?.estimated_purchase_costs ?? 0);
+          setRehabCosts(analysis?.estimated_rehab_costs ?? 0);
+          setAfterRepairValue(analysis?.after_repair_value ?? 0);
+          setInteriorSqft(analysis?.after_repair_sqft ?? 0);
+          setTaxRate(
+            typeof analysis?.tax_rate === 'number'
+              ? analysis.tax_rate / 100
+              : 0.25 // default to 25% if not present
+          );
+
+          setOriginalValues({
+            purchasePrice: analysis?.purchase_price ?? 0,
+            closingCosts: analysis?.estimated_purchase_costs ?? 0,
+            rehabCosts: analysis?.estimated_rehab_costs ?? 0,
+            afterRepairValue: analysis?.after_repair_value ?? 0,
+            interiorSqft: analysis?.after_repair_sqft ?? 0,
+            taxRate:
+              typeof analysis?.tax_rate === 'number'
+                ? analysis.tax_rate / 100
+                : 0.25,
+          });
+
+          setPropertyLoaded(true);
+        } catch (parseError) {
+          setError('Invalid property data');
+          setLoading(false);
+        }
+      } else {
+        setError('Property is required');
         setLoading(false);
       }
-    } else {
-      setError('Property is required');
-      setLoading(false);
-    }
+    };
+    loadPropertyAndAnalysis();
   }, [propertyParam]);
 
   // Detect changes by comparing current values with original values
