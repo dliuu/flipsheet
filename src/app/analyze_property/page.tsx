@@ -532,7 +532,18 @@ export default function AnalyzePropertyPage() {
             <h3 className="text-[#111518] text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4">Purchasing Costs</h3>
             <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="pb-2">
-                <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block">Purchase Price</label>
+                <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
+                  Purchase Price
+                  <span className="relative group">
+                    <svg className="w-4 h-4 text-gray-400 ml-1 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                      explanation
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                    </div>
+                  </span>
+                </label>
                 <input 
                   type="number" 
                   value={purchasePrice}
@@ -541,7 +552,18 @@ export default function AnalyzePropertyPage() {
                 />
               </div>
               <div className="pb-2">
-                <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block">Closing Costs</label>
+                <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
+                  Closing Costs
+                  <span className="relative group">
+                    <svg className="w-4 h-4 text-gray-400 ml-1 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                      explanation
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                    </div>
+                  </span>
+                </label>
                 <input 
                   type="number" 
                   value={closingCosts}
@@ -550,7 +572,18 @@ export default function AnalyzePropertyPage() {
                 />
               </div>
               <div className="pb-2">
-                <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block">Rehab Costs</label>
+                <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
+                  Rehab Costs
+                  <span className="relative group">
+                    <svg className="w-4 h-4 text-gray-400 ml-1 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                      explanation
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                    </div>
+                  </span>
+                </label>
                 <input 
                   type="number" 
                   value={rehabCosts}
@@ -559,7 +592,18 @@ export default function AnalyzePropertyPage() {
                 />
               </div>
               <div className="pb-2">
-                <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block">Other Costs</label>
+                <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
+                  Other Costs
+                  <span className="relative group">
+                    <svg className="w-4 h-4 text-gray-400 ml-1 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                      explanation
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                    </div>
+                  </span>
+                </label>
                 <input 
                   type="number" 
                   placeholder="$0"
@@ -572,7 +616,18 @@ export default function AnalyzePropertyPage() {
             <h3 className="text-[#111518] text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4">After Repair Valuation</h3>
             <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="pb-2">
-                <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block">After Repair Value</label>
+                <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
+                  After Repair Value
+                  <span className="relative group">
+                    <svg className="w-4 h-4 text-gray-400 ml-1 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                      explanation
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                    </div>
+                  </span>
+                </label>
                 <input 
                   type="number" 
                   value={afterRepairValue}
@@ -581,7 +636,18 @@ export default function AnalyzePropertyPage() {
                 />
               </div>
               <div className="pb-2">
-                <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block">After Repair Square Footage</label>
+                <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
+                  After Repair Square Footage
+                  <span className="relative group">
+                    <svg className="w-4 h-4 text-gray-400 ml-1 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                      explanation
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                    </div>
+                  </span>
+                </label>
                 <input 
                   type="number" 
                   placeholder="0"
@@ -589,7 +655,18 @@ export default function AnalyzePropertyPage() {
                 />
               </div>
               <div className="pb-2">
-                <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block">ARV Per Square Foot</label>
+                <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
+                  ARV Per Square Foot
+                  <span className="relative group">
+                    <svg className="w-4 h-4 text-gray-400 ml-1 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                      explanation
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                    </div>
+                  </span>
+                </label>
                 <input 
                   type="number" 
                   placeholder="$0"
@@ -597,7 +674,18 @@ export default function AnalyzePropertyPage() {
                 />
               </div>
               <div className="pb-2">
-                <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block">Market Variance %</label>
+                <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
+                  Market Variance %
+                  <span className="relative group">
+                    <svg className="w-4 h-4 text-gray-400 ml-1 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                      explanation
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                    </div>
+                  </span>
+                </label>
                 <input 
                   type="number" 
                   placeholder="0%"
@@ -610,7 +698,18 @@ export default function AnalyzePropertyPage() {
             <h3 className="text-[#111518] text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4">Holding Costs</h3>
             <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="pb-2">
-                <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block">Property Taxes</label>
+                <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
+                  Property Taxes
+                  <span className="relative group">
+                    <svg className="w-4 h-4 text-gray-400 ml-1 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                      explanation
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                    </div>
+                  </span>
+                </label>
                 <input 
                   type="number" 
                   placeholder="$0"
@@ -618,7 +717,18 @@ export default function AnalyzePropertyPage() {
                 />
               </div>
               <div className="pb-2">
-                <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block">Insurance Costs</label>
+                <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
+                  Insurance Costs
+                  <span className="relative group">
+                    <svg className="w-4 h-4 text-gray-400 ml-1 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                      explanation
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                    </div>
+                  </span>
+                </label>
                 <input 
                   type="number" 
                   placeholder="$0"
@@ -626,7 +736,18 @@ export default function AnalyzePropertyPage() {
                 />
               </div>
               <div className="pb-2">
-                <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block">HOA Fees</label>
+                <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
+                  HOA Fees
+                  <span className="relative group">
+                    <svg className="w-4 h-4 text-gray-400 ml-1 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                      explanation
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                    </div>
+                  </span>
+                </label>
                 <input 
                   type="number" 
                   placeholder="$0"
@@ -634,7 +755,18 @@ export default function AnalyzePropertyPage() {
                 />
               </div>
               <div className="pb-2">
-                <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block">Utilities Costs</label>
+                <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
+                  Utilities Costs
+                  <span className="relative group">
+                    <svg className="w-4 h-4 text-gray-400 ml-1 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                      explanation
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                    </div>
+                  </span>
+                </label>
                 <input 
                   type="number" 
                   placeholder="$0"
@@ -642,7 +774,18 @@ export default function AnalyzePropertyPage() {
                 />
               </div>
               <div className="pb-2">
-                <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block">Accounting and Legal Fees</label>
+                <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
+                  Accounting and Legal Fees
+                  <span className="relative group">
+                    <svg className="w-4 h-4 text-gray-400 ml-1 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                      explanation
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                    </div>
+                  </span>
+                </label>
                 <input 
                   type="number" 
                   placeholder="$0"
@@ -650,7 +793,18 @@ export default function AnalyzePropertyPage() {
                 />
               </div>
               <div className="pb-2">
-                <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block">Other Fees</label>
+                <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
+                  Other Fees
+                  <span className="relative group">
+                    <svg className="w-4 h-4 text-gray-400 ml-1 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                      explanation
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                    </div>
+                  </span>
+                </label>
                 <input 
                   type="number" 
                   placeholder="$0"
@@ -916,43 +1070,71 @@ export default function AnalyzePropertyPage() {
       )}
 
       {/* Floating Save Changes Button */}
-      <div className="fixed bottom-6 right-6 z-50">
-        <button
-          onClick={handleSaveChanges}
-          disabled={isSaving}
-          className={`flex items-center gap-2 px-6 py-3 rounded-full shadow-lg font-semibold transition-all duration-200 ${
-            isSaving
-              ? 'bg-gray-400 text-white cursor-not-allowed'
-              : saveSuccess
-              ? 'bg-green-500 text-white hover:bg-green-600'
-              : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-xl'
-          }`}
-        >
-          {isSaving ? (
-            <>
-              <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <span>Saving...</span>
-            </>
-          ) : saveSuccess ? (
-            <>
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span>Saved!</span>
-            </>
-          ) : (
-            <>
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-              </svg>
-              <span>Save Changes</span>
-            </>
-          )}
-        </button>
-      </div>
+      {(hasChanges || isSaving) && (
+        <div className="fixed bottom-6 right-6 z-50">
+          <button
+            onClick={handleSaveChanges}
+            disabled={isSaving}
+            className={`flex items-center gap-2 px-6 py-3 rounded-full shadow-lg font-semibold transition-all duration-200 ${
+              isSaving
+                ? 'bg-gray-400 text-white cursor-not-allowed'
+                : saveSuccess
+                ? 'bg-green-500 text-white hover:bg-green-600'
+                : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-xl'
+            }`}
+          >
+            {isSaving ? (
+              <>
+                <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Saving...</span>
+              </>
+            ) : saveSuccess ? (
+              <>
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Saved!</span>
+              </>
+            ) : (
+              <>
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                </svg>
+                <span>Save Changes</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Success Checkmark Pop Animation */}
+      {saveSuccess && !hasChanges && !isSaving && (
+        <div className="fixed bottom-6 right-6 z-50 pointer-events-none">
+          <span
+            className="inline-flex items-center justify-center bg-green-500 text-white rounded-full shadow-lg"
+            style={{ width: 64, height: 64, animation: 'pop-checkmark 0.9s cubic-bezier(0.22, 1, 0.36, 1)' }}
+            aria-live="polite"
+            aria-label="Save successful"
+          >
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="11" stroke="white" strokeWidth="2.5" fill="none" />
+              <path d="M7 13l3 3 7-7" stroke="white" strokeWidth="2.5" fill="none" />
+            </svg>
+          </span>
+          <style>{`
+            @keyframes pop-checkmark {
+              0% { opacity: 0; transform: scale(0.5); }
+              40% { opacity: 1; transform: scale(1.15); }
+              60% { opacity: 1; transform: scale(0.95); }
+              80% { opacity: 1; transform: scale(1.05); }
+              100% { opacity: 0; transform: scale(0.8); }
+            }
+          `}</style>
+        </div>
+      )}
     </div>
   );
 }
