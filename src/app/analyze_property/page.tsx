@@ -51,6 +51,9 @@ export default function AnalyzePropertyPage() {
   const [interiorSqft, setInteriorSqft] = useState(property?.interior_sqft || 0);
   const [taxRate, setTaxRate] = useState(0.25); // Default 25%
 
+  // Add state for months held (default 2)
+  const [monthsHeld, setMonthsHeld] = useState(2);
+
   // Track original values to detect changes
   const [originalValues, setOriginalValues] = useState({
     purchasePrice: 0,
@@ -696,6 +699,35 @@ export default function AnalyzePropertyPage() {
 
             {/* Holding Costs */}
             <h3 className="text-[#111518] text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4">Holding Costs</h3>
+            {/* Months Held Slider */}
+            <div className="px-4 pb-4 col-span-2">
+              <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
+                Months Held
+                <span className="relative group">
+                  <svg className="w-4 h-4 text-gray-400 ml-1 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                    How many months you expect to hold the property before selling. Impacts holding costs and ROI calculations.
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                  </div>
+                </span>
+              </label>
+              <div className="w-full bg-gray-50 border border-gray-200 rounded-lg p-4 flex flex-col md:flex-row md:items-center gap-4">
+                <input
+                  type="range"
+                  min={0.5}
+                  max={24}
+                  step={0.5}
+                  value={monthsHeld}
+                  onChange={e => setMonthsHeld(Number(e.target.value))}
+                  className="w-full accent-blue-500 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-200 rounded-lg h-2"
+                  aria-label="Months Held"
+                  style={{ background: 'linear-gradient(90deg, #e0e7ef 0%, #f8fafc 100%)' }}
+                />
+                <span className="text-[#111518] text-sm font-medium w-24 text-center bg-white border border-gray-200 rounded-lg py-1 shadow-sm">{monthsHeld} months</span>
+              </div>
+            </div>
             <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="pb-2">
                 <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
@@ -710,11 +742,17 @@ export default function AnalyzePropertyPage() {
                     </div>
                   </span>
                 </label>
-                <input 
-                  type="number" 
-                  placeholder="$0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
-                />
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="number" 
+                    placeholder="$0"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
+                  />
+                  <div className="flex gap-1">
+                    <button type="button" className="px-2 py-1 rounded-l border border-gray-200 text-gray-500 text-xs font-medium bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300">Monthly</button>
+                    <button type="button" className="px-2 py-1 rounded-r border border-gray-300 text-gray-800 text-xs font-bold bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 shadow-sm">Annual</button>
+                  </div>
+                </div>
               </div>
               <div className="pb-2">
                 <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
@@ -729,11 +767,17 @@ export default function AnalyzePropertyPage() {
                     </div>
                   </span>
                 </label>
-                <input 
-                  type="number" 
-                  placeholder="$0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
-                />
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="number" 
+                    placeholder="$0"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
+                  />
+                  <div className="flex gap-1">
+                    <button type="button" className="px-2 py-1 rounded-l border border-gray-200 text-gray-500 text-xs font-medium bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300">Monthly</button>
+                    <button type="button" className="px-2 py-1 rounded-r border border-gray-300 text-gray-800 text-xs font-bold bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 shadow-sm">Annual</button>
+                  </div>
+                </div>
               </div>
               <div className="pb-2">
                 <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
@@ -748,11 +792,17 @@ export default function AnalyzePropertyPage() {
                     </div>
                   </span>
                 </label>
-                <input 
-                  type="number" 
-                  placeholder="$0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
-                />
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="number" 
+                    placeholder="$0"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
+                  />
+                  <div className="flex gap-1">
+                    <button type="button" className="px-2 py-1 rounded-l border border-gray-200 text-gray-500 text-xs font-medium bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300">Monthly</button>
+                    <button type="button" className="px-2 py-1 rounded-r border border-gray-300 text-gray-800 text-xs font-bold bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 shadow-sm">Annual</button>
+                  </div>
+                </div>
               </div>
               <div className="pb-2">
                 <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
@@ -767,11 +817,17 @@ export default function AnalyzePropertyPage() {
                     </div>
                   </span>
                 </label>
-                <input 
-                  type="number" 
-                  placeholder="$0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
-                />
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="number" 
+                    placeholder="$0"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
+                  />
+                  <div className="flex gap-1">
+                    <button type="button" className="px-2 py-1 rounded-l border border-gray-200 text-gray-500 text-xs font-medium bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300">Monthly</button>
+                    <button type="button" className="px-2 py-1 rounded-r border border-gray-300 text-gray-800 text-xs font-bold bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 shadow-sm">Annual</button>
+                  </div>
+                </div>
               </div>
               <div className="pb-2">
                 <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
@@ -786,15 +842,21 @@ export default function AnalyzePropertyPage() {
                     </div>
                   </span>
                 </label>
-                <input 
-                  type="number" 
-                  placeholder="$0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
-                />
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="number" 
+                    placeholder="$0"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
+                  />
+                  <div className="flex gap-1">
+                    <button type="button" className="px-2 py-1 rounded-l border border-gray-200 text-gray-500 text-xs font-medium bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300">Monthly</button>
+                    <button type="button" className="px-2 py-1 rounded-r border border-gray-300 text-gray-800 text-xs font-bold bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 shadow-sm">Annual</button>
+                  </div>
+                </div>
               </div>
               <div className="pb-2">
                 <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
-                  Other Fees
+                  Other Holding Fees
                   <span className="relative group">
                     <svg className="w-4 h-4 text-gray-400 ml-1 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -805,11 +867,17 @@ export default function AnalyzePropertyPage() {
                     </div>
                   </span>
                 </label>
-                <input 
-                  type="number" 
-                  placeholder="$0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
-                />
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="number" 
+                    placeholder="$0"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
+                  />
+                  <div className="flex gap-1">
+                    <button type="button" className="px-2 py-1 rounded-l border border-gray-200 text-gray-500 text-xs font-medium bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300">Monthly</button>
+                    <button type="button" className="px-2 py-1 rounded-r border border-gray-300 text-gray-800 text-xs font-bold bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 shadow-sm">Annual</button>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -868,7 +936,7 @@ export default function AnalyzePropertyPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                        Property Taxes + Insurance Costs + HOA Fees + Utilities Costs + Accounting and Legal Fees + Other Fees
+                        Property Taxes + Insurance Costs + HOA Fees + Utilities Costs + Accounting and Legal Fees + Other Holding Fees
                         <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
                       </div>
                     </div>
