@@ -62,6 +62,12 @@ export default function AnalyzePropertyPage() {
     afterRepairValue: 0,
     interiorSqft: 0,
     taxRate: 0.25,
+    propertyTaxesAnnual: '',
+    insuranceCostsAnnual: '',
+    hoaFeesAnnual: '',
+    utilitiesCostsAnnual: '',
+    accountingLegalFeesAnnual: '',
+    otherHoldingFeesAnnual: '',
   });
 
   // Save functionality states
@@ -80,6 +86,7 @@ export default function AnalyzePropertyPage() {
   const [totalROI, setTotalROI] = useState(0);
   const [annualizedROI, setAnnualizedROI] = useState(0);
   const [postTaxProfit, setPostTaxProfit] = useState(0);
+  const [holdingCosts, setHoldingCosts] = useState(0);
 
   // Add at the top, after other useState hooks
   const [propertyTaxesMode, setPropertyTaxesMode] = useState<'annual' | 'monthly'>('annual');
@@ -164,7 +171,13 @@ export default function AnalyzePropertyPage() {
     const _capitalNeeded = calculateCapitalNeeded(_totalInvestment, _downPayment);
     setCapitalNeeded(_capitalNeeded);
 
-    const _totalProfit = calculateTotalProfit(_saleProceeds, _totalInvestment);
+    // Calculate holding costs
+    const annualSum = propertyTaxes + insuranceCosts + hoaFees + utilitiesCosts + accountingLegalFees + otherHoldingFees;
+    const _holdingCosts = (monthsHeld / 12) * annualSum;
+    setHoldingCosts(_holdingCosts);
+
+    // Update total profit to subtract holding costs
+    const _totalProfit = calculateTotalProfit(_saleProceeds, _totalInvestment) - _holdingCosts;
     setTotalProfit(_totalProfit);
 
     const _totalROI = calculateTotalROI(_totalProfit, _totalInvestment);
@@ -177,7 +190,7 @@ export default function AnalyzePropertyPage() {
 
     const _postTaxProfit = calculatePostTaxProfit(_totalProfit, taxRate);
     setPostTaxProfit(_postTaxProfit);
-  }, [purchasePrice, closingCosts, rehabCosts, afterRepairValue, interiorSqft, taxRate, property?.rehab_duration_months]);
+  }, [purchasePrice, closingCosts, rehabCosts, afterRepairValue, interiorSqft, taxRate, property?.rehab_duration_months, monthsHeld, propertyTaxes, insuranceCosts, hoaFees, utilitiesCosts, accountingLegalFees, otherHoldingFees]);
 
   // Check if current user is the property owner
   const isPropertyOwner = user && property && user.id === property.user_id;
@@ -223,6 +236,12 @@ export default function AnalyzePropertyPage() {
               typeof analysis?.tax_rate === 'number'
                 ? analysis.tax_rate / 100
                 : 0.25,
+            propertyTaxesAnnual,
+            insuranceCostsAnnual,
+            hoaFeesAnnual,
+            utilitiesCostsAnnual,
+            accountingLegalFeesAnnual,
+            otherHoldingFeesAnnual,
           });
 
           setPropertyLoaded(true);
@@ -249,10 +268,16 @@ export default function AnalyzePropertyPage() {
       rehabCosts !== originalValues.rehabCosts ||
       afterRepairValue !== originalValues.afterRepairValue ||
       interiorSqft !== originalValues.interiorSqft ||
-      taxRate !== originalValues.taxRate;
+      taxRate !== originalValues.taxRate ||
+      propertyTaxesAnnual !== originalValues.propertyTaxesAnnual ||
+      insuranceCostsAnnual !== originalValues.insuranceCostsAnnual ||
+      hoaFeesAnnual !== originalValues.hoaFeesAnnual ||
+      utilitiesCostsAnnual !== originalValues.utilitiesCostsAnnual ||
+      accountingLegalFeesAnnual !== originalValues.accountingLegalFeesAnnual ||
+      otherHoldingFeesAnnual !== originalValues.otherHoldingFeesAnnual;
     
     setHasChanges(changes);
-  }, [purchasePrice, closingCosts, rehabCosts, afterRepairValue, interiorSqft, taxRate, originalValues, propertyLoaded]);
+  }, [purchasePrice, closingCosts, rehabCosts, afterRepairValue, interiorSqft, taxRate, propertyTaxesAnnual, insuranceCostsAnnual, hoaFeesAnnual, utilitiesCostsAnnual, accountingLegalFeesAnnual, otherHoldingFeesAnnual, originalValues, propertyLoaded]);
 
   const checkConnection = async () => {
     try {
@@ -365,6 +390,12 @@ export default function AnalyzePropertyPage() {
         afterRepairValue,
         interiorSqft,
         taxRate,
+        propertyTaxesAnnual,
+        insuranceCostsAnnual,
+        hoaFeesAnnual,
+        utilitiesCostsAnnual,
+        accountingLegalFeesAnnual,
+        otherHoldingFeesAnnual,
       });
       
       setHasChanges(false);
@@ -468,6 +499,12 @@ export default function AnalyzePropertyPage() {
                       <span className="text-[#111518] text-sm font-medium">Total Profit</span>
                       <span className="text-green-600 text-sm font-bold">{totalProfit.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: showDecimals ? 2 : 0, minimumFractionDigits: showDecimals ? 2 : 0 })}</span>
                     </div>
+                    {/* Post-Tax Profit */}
+                    <div className="flex justify-between items-center">
+                      <span className="text-[#111518] text-sm font-medium">Post-Tax Profit</span>
+                      <span className="text-green-600 text-sm font-bold">{postTaxProfit.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: showDecimals ? 2 : 0, minimumFractionDigits: showDecimals ? 2 : 0 })}</span>
+                    </div>
+
                   </div>
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
@@ -477,6 +514,11 @@ export default function AnalyzePropertyPage() {
                     <div className="flex justify-between items-center">
                       <span className="text-[#111518] text-sm font-medium">% Annualized ROI</span>
                       <span className="text-[#111518] text-sm font-bold">{(annualizedROI * 100).toLocaleString('en-US', { maximumFractionDigits: showDecimals ? 2 : 0, minimumFractionDigits: showDecimals ? 2 : 0 }) + '%'}</span>
+                    </div>
+                    {/* Months Held */}
+                    <div className="flex justify-between items-center">
+                      <span className="text-[#111518] text-sm font-medium">Months Held</span>
+                      <span className="text-[#111518] text-sm font-bold">{monthsHeld}</span>
                     </div>
                   </div>
                 </div>
@@ -1111,13 +1153,13 @@ export default function AnalyzePropertyPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                        Property Taxes + Insurance Costs + HOA Fees + Utilities Costs + Accounting and Legal Fees + Other Holding Fees
+                        Property Taxes + Insurance Costs + HOA Fees + Utilities Costs + Accounting and Legal Fees + Other Holding Fees (prorated by months held)
                         <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
                       </div>
                     </div>
                     <span className="text-[#111518] text-sm font-medium">Holding Costs</span>
                   </div>
-                  <span className="text-red-600 text-sm font-bold">-{sellingCosts.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: showDecimals ? 2 : 0, minimumFractionDigits: showDecimals ? 2 : 0 })}</span>
+                  <span className="text-red-600 text-sm font-bold">-{holdingCosts.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: showDecimals ? 2 : 0, minimumFractionDigits: showDecimals ? 2 : 0 })}</span>
                 </div>
 
                 {/* Invested Capital */}
