@@ -81,6 +81,67 @@ export default function AnalyzePropertyPage() {
   const [annualizedROI, setAnnualizedROI] = useState(0);
   const [postTaxProfit, setPostTaxProfit] = useState(0);
 
+  // Add at the top, after other useState hooks
+  const [propertyTaxesMode, setPropertyTaxesMode] = useState<'annual' | 'monthly'>('annual');
+  const [insuranceCostsMode, setInsuranceCostsMode] = useState<'annual' | 'monthly'>('annual');
+  const [hoaFeesMode, setHoaFeesMode] = useState<'annual' | 'monthly'>('annual');
+  const [utilitiesCostsMode, setUtilitiesCostsMode] = useState<'annual' | 'monthly'>('annual');
+  const [accountingLegalFeesMode, setAccountingLegalFeesMode] = useState<'annual' | 'monthly'>('annual');
+  const [otherHoldingFeesMode, setOtherHoldingFeesMode] = useState<'annual' | 'monthly'>('annual');
+
+  // For each holding cost input, keep only one state: the annual value as a string
+  const [propertyTaxesAnnual, setPropertyTaxesAnnual] = useState('');
+  const [insuranceCostsAnnual, setInsuranceCostsAnnual] = useState('');
+  const [hoaFeesAnnual, setHoaFeesAnnual] = useState('');
+  const [utilitiesCostsAnnual, setUtilitiesCostsAnnual] = useState('');
+  const [accountingLegalFeesAnnual, setAccountingLegalFeesAnnual] = useState('');
+  const [otherHoldingFeesAnnual, setOtherHoldingFeesAnnual] = useState('');
+
+  // For calculations, use Number(annual) || 0
+  const propertyTaxes = Number(propertyTaxesAnnual) || 0;
+  const insuranceCosts = Number(insuranceCostsAnnual) || 0;
+  const hoaFees = Number(hoaFeesAnnual) || 0;
+  const utilitiesCosts = Number(utilitiesCostsAnnual) || 0;
+  const accountingLegalFees = Number(accountingLegalFeesAnnual) || 0;
+  const otherHoldingFees = Number(otherHoldingFeesAnnual) || 0;
+
+  // For UI, derive the value to show in the input based on the mode
+  function getDisplayValue(annualValue: string, mode: 'annual' | 'monthly'): string {
+    if (!annualValue) return '';
+    const num = Number(annualValue);
+    if (isNaN(num)) return '';
+    return mode === 'annual' ? annualValue : (num / 12).toFixed(2).replace(/\.00$/, '');
+  }
+
+  // For onChange, always update the annual value
+  function handleInputChange(
+    e: React.ChangeEvent<HTMLInputElement>,
+    mode: 'annual' | 'monthly',
+    setAnnual: (val: string) => void
+  ): void {
+    const val = e.target.value;
+    if (!/^\d*(\.\d{0,2})?$/.test(val)) return; // allow only numbers and up to 2 decimals
+    if (mode === 'annual') {
+      setAnnual(val);
+    } else {
+      // monthly mode: store as annual
+      const num = Number(val);
+      if (val === '') setAnnual('');
+      else if (!isNaN(num)) setAnnual((num * 12).toString());
+    }
+  }
+
+  function handleInputBlur(
+    annualValue: string,
+    setAnnual: (val: string) => void,
+    mode: 'annual' | 'monthly'
+  ): void {
+    if (!annualValue) return;
+    const num = Number(annualValue);
+    if (isNaN(num)) setAnnual('');
+    else setAnnual(num.toString());
+  }
+
   // Compute showDecimals flag based on all relevant inputs
   const showDecimals = shouldShowDecimals(
     purchasePrice, closingCosts, rehabCosts, afterRepairValue, interiorSqft, taxRate * 100
@@ -744,13 +805,32 @@ export default function AnalyzePropertyPage() {
                 </label>
                 <div className="flex items-center gap-2">
                   <input 
-                    type="number" 
+                    type="number"
                     placeholder="$0"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
+                    value={getDisplayValue(propertyTaxesAnnual, propertyTaxesMode)}
+                    onChange={e => handleInputChange(e, propertyTaxesMode, setPropertyTaxesAnnual)}
+                    onBlur={() => handleInputBlur(propertyTaxesAnnual, setPropertyTaxesAnnual, propertyTaxesMode)}
                   />
                   <div className="flex gap-1">
-                    <button type="button" className="px-2 py-1 rounded-l border border-gray-200 text-gray-500 text-xs font-medium bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300">Monthly</button>
-                    <button type="button" className="px-2 py-1 rounded-r border border-gray-300 text-gray-800 text-xs font-bold bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 shadow-sm">Annual</button>
+                    <button
+                      type="button"
+                      className={`px-2 py-1 rounded-l border border-gray-200 text-xs font-medium ${propertyTaxesMode === 'monthly' ? 'bg-gray-100 text-gray-800 font-bold' : 'bg-white text-gray-500'}`}
+                      onClick={() => {
+                        if (propertyTaxesMode !== 'monthly') {
+                          setPropertyTaxesMode('monthly');
+                        }
+                      }}
+                    >Monthly</button>
+                    <button
+                      type="button"
+                      className={`px-2 py-1 rounded-r border border-gray-300 text-xs font-bold ${propertyTaxesMode === 'annual' ? 'bg-gray-100 text-gray-800' : 'bg-white text-gray-500 font-medium'}`}
+                      onClick={() => {
+                        if (propertyTaxesMode !== 'annual') {
+                          setPropertyTaxesMode('annual');
+                        }
+                      }}
+                    >Annual</button>
                   </div>
                 </div>
               </div>
@@ -769,13 +849,32 @@ export default function AnalyzePropertyPage() {
                 </label>
                 <div className="flex items-center gap-2">
                   <input 
-                    type="number" 
+                    type="number"
                     placeholder="$0"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
+                    value={getDisplayValue(insuranceCostsAnnual, insuranceCostsMode)}
+                    onChange={e => handleInputChange(e, insuranceCostsMode, setInsuranceCostsAnnual)}
+                    onBlur={() => handleInputBlur(insuranceCostsAnnual, setInsuranceCostsAnnual, insuranceCostsMode)}
                   />
                   <div className="flex gap-1">
-                    <button type="button" className="px-2 py-1 rounded-l border border-gray-200 text-gray-500 text-xs font-medium bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300">Monthly</button>
-                    <button type="button" className="px-2 py-1 rounded-r border border-gray-300 text-gray-800 text-xs font-bold bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 shadow-sm">Annual</button>
+                    <button
+                      type="button"
+                      className={`px-2 py-1 rounded-l border border-gray-200 text-xs font-medium ${insuranceCostsMode === 'monthly' ? 'bg-gray-100 text-gray-800 font-bold' : 'bg-white text-gray-500'}`}
+                      onClick={() => {
+                        if (insuranceCostsMode !== 'monthly') {
+                          setInsuranceCostsMode('monthly');
+                        }
+                      }}
+                    >Monthly</button>
+                    <button
+                      type="button"
+                      className={`px-2 py-1 rounded-r border border-gray-300 text-xs font-bold ${insuranceCostsMode === 'annual' ? 'bg-gray-100 text-gray-800' : 'bg-white text-gray-500 font-medium'}`}
+                      onClick={() => {
+                        if (insuranceCostsMode !== 'annual') {
+                          setInsuranceCostsMode('annual');
+                        }
+                      }}
+                    >Annual</button>
                   </div>
                 </div>
               </div>
@@ -794,13 +893,32 @@ export default function AnalyzePropertyPage() {
                 </label>
                 <div className="flex items-center gap-2">
                   <input 
-                    type="number" 
+                    type="number"
                     placeholder="$0"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
+                    value={getDisplayValue(hoaFeesAnnual, hoaFeesMode)}
+                    onChange={e => handleInputChange(e, hoaFeesMode, setHoaFeesAnnual)}
+                    onBlur={() => handleInputBlur(hoaFeesAnnual, setHoaFeesAnnual, hoaFeesMode)}
                   />
                   <div className="flex gap-1">
-                    <button type="button" className="px-2 py-1 rounded-l border border-gray-200 text-gray-500 text-xs font-medium bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300">Monthly</button>
-                    <button type="button" className="px-2 py-1 rounded-r border border-gray-300 text-gray-800 text-xs font-bold bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 shadow-sm">Annual</button>
+                    <button
+                      type="button"
+                      className={`px-2 py-1 rounded-l border border-gray-200 text-xs font-medium ${hoaFeesMode === 'monthly' ? 'bg-gray-100 text-gray-800 font-bold' : 'bg-white text-gray-500'}`}
+                      onClick={() => {
+                        if (hoaFeesMode !== 'monthly') {
+                          setHoaFeesMode('monthly');
+                        }
+                      }}
+                    >Monthly</button>
+                    <button
+                      type="button"
+                      className={`px-2 py-1 rounded-r border border-gray-300 text-xs font-bold ${hoaFeesMode === 'annual' ? 'bg-gray-100 text-gray-800' : 'bg-white text-gray-500 font-medium'}`}
+                      onClick={() => {
+                        if (hoaFeesMode !== 'annual') {
+                          setHoaFeesMode('annual');
+                        }
+                      }}
+                    >Annual</button>
                   </div>
                 </div>
               </div>
@@ -819,13 +937,32 @@ export default function AnalyzePropertyPage() {
                 </label>
                 <div className="flex items-center gap-2">
                   <input 
-                    type="number" 
+                    type="number"
                     placeholder="$0"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
+                    value={getDisplayValue(utilitiesCostsAnnual, utilitiesCostsMode)}
+                    onChange={e => handleInputChange(e, utilitiesCostsMode, setUtilitiesCostsAnnual)}
+                    onBlur={() => handleInputBlur(utilitiesCostsAnnual, setUtilitiesCostsAnnual, utilitiesCostsMode)}
                   />
                   <div className="flex gap-1">
-                    <button type="button" className="px-2 py-1 rounded-l border border-gray-200 text-gray-500 text-xs font-medium bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300">Monthly</button>
-                    <button type="button" className="px-2 py-1 rounded-r border border-gray-300 text-gray-800 text-xs font-bold bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 shadow-sm">Annual</button>
+                    <button
+                      type="button"
+                      className={`px-2 py-1 rounded-l border border-gray-200 text-xs font-medium ${utilitiesCostsMode === 'monthly' ? 'bg-gray-100 text-gray-800 font-bold' : 'bg-white text-gray-500'}`}
+                      onClick={() => {
+                        if (utilitiesCostsMode !== 'monthly') {
+                          setUtilitiesCostsMode('monthly');
+                        }
+                      }}
+                    >Monthly</button>
+                    <button
+                      type="button"
+                      className={`px-2 py-1 rounded-r border border-gray-300 text-xs font-bold ${utilitiesCostsMode === 'annual' ? 'bg-gray-100 text-gray-800' : 'bg-white text-gray-500 font-medium'}`}
+                      onClick={() => {
+                        if (utilitiesCostsMode !== 'annual') {
+                          setUtilitiesCostsMode('annual');
+                        }
+                      }}
+                    >Annual</button>
                   </div>
                 </div>
               </div>
@@ -844,13 +981,32 @@ export default function AnalyzePropertyPage() {
                 </label>
                 <div className="flex items-center gap-2">
                   <input 
-                    type="number" 
+                    type="number"
                     placeholder="$0"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
+                    value={getDisplayValue(accountingLegalFeesAnnual, accountingLegalFeesMode)}
+                    onChange={e => handleInputChange(e, accountingLegalFeesMode, setAccountingLegalFeesAnnual)}
+                    onBlur={() => handleInputBlur(accountingLegalFeesAnnual, setAccountingLegalFeesAnnual, accountingLegalFeesMode)}
                   />
                   <div className="flex gap-1">
-                    <button type="button" className="px-2 py-1 rounded-l border border-gray-200 text-gray-500 text-xs font-medium bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300">Monthly</button>
-                    <button type="button" className="px-2 py-1 rounded-r border border-gray-300 text-gray-800 text-xs font-bold bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 shadow-sm">Annual</button>
+                    <button
+                      type="button"
+                      className={`px-2 py-1 rounded-l border border-gray-200 text-xs font-medium ${accountingLegalFeesMode === 'monthly' ? 'bg-gray-100 text-gray-800 font-bold' : 'bg-white text-gray-500'}`}
+                      onClick={() => {
+                        if (accountingLegalFeesMode !== 'monthly') {
+                          setAccountingLegalFeesMode('monthly');
+                        }
+                      }}
+                    >Monthly</button>
+                    <button
+                      type="button"
+                      className={`px-2 py-1 rounded-r border border-gray-300 text-xs font-bold ${accountingLegalFeesMode === 'annual' ? 'bg-gray-100 text-gray-800' : 'bg-white text-gray-500 font-medium'}`}
+                      onClick={() => {
+                        if (accountingLegalFeesMode !== 'annual') {
+                          setAccountingLegalFeesMode('annual');
+                        }
+                      }}
+                    >Annual</button>
                   </div>
                 </div>
               </div>
@@ -869,13 +1025,32 @@ export default function AnalyzePropertyPage() {
                 </label>
                 <div className="flex items-center gap-2">
                   <input 
-                    type="number" 
+                    type="number"
                     placeholder="$0"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
+                    value={getDisplayValue(otherHoldingFeesAnnual, otherHoldingFeesMode)}
+                    onChange={e => handleInputChange(e, otherHoldingFeesMode, setOtherHoldingFeesAnnual)}
+                    onBlur={() => handleInputBlur(otherHoldingFeesAnnual, setOtherHoldingFeesAnnual, otherHoldingFeesMode)}
                   />
                   <div className="flex gap-1">
-                    <button type="button" className="px-2 py-1 rounded-l border border-gray-200 text-gray-500 text-xs font-medium bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300">Monthly</button>
-                    <button type="button" className="px-2 py-1 rounded-r border border-gray-300 text-gray-800 text-xs font-bold bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 shadow-sm">Annual</button>
+                    <button
+                      type="button"
+                      className={`px-2 py-1 rounded-l border border-gray-200 text-xs font-medium ${otherHoldingFeesMode === 'monthly' ? 'bg-gray-100 text-gray-800 font-bold' : 'bg-white text-gray-500'}`}
+                      onClick={() => {
+                        if (otherHoldingFeesMode !== 'monthly') {
+                          setOtherHoldingFeesMode('monthly');
+                        }
+                      }}
+                    >Monthly</button>
+                    <button
+                      type="button"
+                      className={`px-2 py-1 rounded-r border border-gray-300 text-xs font-bold ${otherHoldingFeesMode === 'annual' ? 'bg-gray-100 text-gray-800' : 'bg-white text-gray-500 font-medium'}`}
+                      onClick={() => {
+                        if (otherHoldingFeesMode !== 'annual') {
+                          setOtherHoldingFeesMode('annual');
+                        }
+                      }}
+                    >Annual</button>
                   </div>
                 </div>
               </div>
