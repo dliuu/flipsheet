@@ -18,6 +18,12 @@ import {
   calculateCapitalNeeded,
   calculatePostTaxProfit,
   calculate70PercentRule,
+  calculateLoanAmount,
+  calculateMonthlyMortgagePayment,
+  calculateTotalInterestPaid,
+  calculateTotalLoanCosts,
+  calculateLoanToValueRatio,
+  calculateDebtToIncomeRatio,
 } from '@/lib/analysis_calculations/flip_calc';
 
 // Utility to determine if any input has decimals
@@ -69,6 +75,15 @@ export default function AnalyzePropertyPage() {
   // Add state for months held (default 2)
   const [monthsHeld, setMonthsHeld] = useState(2);
 
+  // Loan evaluation state variables
+  const [showLoanEvaluation, setShowLoanEvaluation] = useState(false);
+  const [downPaymentPercentage, setDownPaymentPercentage] = useState(20); // Default 20%
+  const [annualInterestRate, setAnnualInterestRate] = useState(7.5); // Default 7.5%
+  const [loanTermYears, setLoanTermYears] = useState(30); // Default 30 years
+  const [loanFees, setLoanFees] = useState(0);
+  const [monthlyIncome, setMonthlyIncome] = useState(0);
+  const [otherMonthlyDebt, setOtherMonthlyDebt] = useState(0);
+
   // Track original values to detect changes
   const [originalValues, setOriginalValues] = useState({
     purchasePrice: 0,
@@ -83,6 +98,12 @@ export default function AnalyzePropertyPage() {
     utilitiesCostsAnnual: '',
     accountingLegalFeesAnnual: '',
     otherHoldingFeesAnnual: '',
+    downPaymentPercentage: 20,
+    annualInterestRate: 7.5,
+    loanTermYears: 30,
+    loanFees: 0,
+    monthlyIncome: 0,
+    otherMonthlyDebt: 0,
   });
 
   // Save functionality states
@@ -105,6 +126,14 @@ export default function AnalyzePropertyPage() {
 
   // Metrics calculation results
   const [seventyPercentRule, setSeventyPercentRule] = useState({ maxPurchasePrice: 0, passes: false });
+
+  // Loan calculation results
+  const [loanAmount, setLoanAmount] = useState(0);
+  const [monthlyMortgagePayment, setMonthlyMortgagePayment] = useState(0);
+  const [totalInterestPaid, setTotalInterestPaid] = useState(0);
+  const [totalLoanCosts, setTotalLoanCosts] = useState(0);
+  const [loanToValueRatio, setLoanToValueRatio] = useState(0);
+  const [debtToIncomeRatio, setDebtToIncomeRatio] = useState(0);
 
   // Add at the top, after other useState hooks
   const [propertyTaxesMode, setPropertyTaxesMode] = useState<'annual' | 'monthly'>('annual');
@@ -212,7 +241,26 @@ export default function AnalyzePropertyPage() {
     // Calculate 70% rule metric
     const _seventyPercentRule = calculate70PercentRule(afterRepairValue, rehabCosts, purchasePrice);
     setSeventyPercentRule(_seventyPercentRule);
-  }, [purchasePrice, closingCosts, rehabCosts, afterRepairValue, interiorSqft, taxRate, property?.rehab_duration_months, monthsHeld, propertyTaxes, insuranceCosts, hoaFees, utilitiesCosts, accountingLegalFees, otherHoldingFees]);
+
+    // Calculate loan metrics
+    const _loanAmount = calculateLoanAmount(purchasePrice, downPaymentPercentage / 100);
+    setLoanAmount(_loanAmount);
+
+    const _monthlyMortgagePayment = calculateMonthlyMortgagePayment(_loanAmount, annualInterestRate / 100, loanTermYears);
+    setMonthlyMortgagePayment(_monthlyMortgagePayment);
+
+    const _totalInterestPaid = calculateTotalInterestPaid(_monthlyMortgagePayment, loanTermYears, _loanAmount);
+    setTotalInterestPaid(_totalInterestPaid);
+
+    const _totalLoanCosts = calculateTotalLoanCosts(_totalInterestPaid, loanFees);
+    setTotalLoanCosts(_totalLoanCosts);
+
+    const _loanToValueRatio = calculateLoanToValueRatio(_loanAmount, purchasePrice);
+    setLoanToValueRatio(_loanToValueRatio);
+
+    const _debtToIncomeRatio = calculateDebtToIncomeRatio(otherMonthlyDebt, _monthlyMortgagePayment, monthlyIncome);
+    setDebtToIncomeRatio(_debtToIncomeRatio);
+  }, [purchasePrice, closingCosts, rehabCosts, afterRepairValue, interiorSqft, taxRate, property?.rehab_duration_months, monthsHeld, propertyTaxes, insuranceCosts, hoaFees, utilitiesCosts, accountingLegalFees, otherHoldingFees, downPaymentPercentage, annualInterestRate, loanTermYears, loanFees, monthlyIncome, otherMonthlyDebt]);
 
   // Check if current user is the property owner
   const isPropertyOwner = user && property && user.id === property.user_id;
@@ -280,6 +328,12 @@ export default function AnalyzePropertyPage() {
             utilitiesCostsAnnual,
             accountingLegalFeesAnnual,
             otherHoldingFeesAnnual,
+            downPaymentPercentage: 20,
+            annualInterestRate: 7.5,
+            loanTermYears: 30,
+            loanFees: 0,
+            monthlyIncome: 0,
+            otherMonthlyDebt: 0,
           });
 
           setPropertyLoaded(true);
@@ -312,10 +366,54 @@ export default function AnalyzePropertyPage() {
       hoaFeesAnnual !== originalValues.hoaFeesAnnual ||
       utilitiesCostsAnnual !== originalValues.utilitiesCostsAnnual ||
       accountingLegalFeesAnnual !== originalValues.accountingLegalFeesAnnual ||
-      otherHoldingFeesAnnual !== originalValues.otherHoldingFeesAnnual;
+      otherHoldingFeesAnnual !== originalValues.otherHoldingFeesAnnual ||
+      downPaymentPercentage !== originalValues.downPaymentPercentage ||
+      annualInterestRate !== originalValues.annualInterestRate ||
+      loanTermYears !== originalValues.loanTermYears ||
+      loanFees !== originalValues.loanFees ||
+      monthlyIncome !== originalValues.monthlyIncome ||
+      otherMonthlyDebt !== originalValues.otherMonthlyDebt;
     
     setHasChanges(changes);
-  }, [purchasePrice, closingCosts, rehabCosts, afterRepairValue, interiorSqft, taxRate, propertyTaxesAnnual, insuranceCostsAnnual, hoaFeesAnnual, utilitiesCostsAnnual, accountingLegalFeesAnnual, otherHoldingFeesAnnual, originalValues, propertyLoaded]);
+  }, [
+    purchasePrice, 
+    closingCosts, 
+    rehabCosts, 
+    afterRepairValue, 
+    interiorSqft, 
+    taxRate, 
+    propertyTaxesAnnual, 
+    insuranceCostsAnnual, 
+    hoaFeesAnnual, 
+    utilitiesCostsAnnual, 
+    accountingLegalFeesAnnual, 
+    otherHoldingFeesAnnual, 
+    downPaymentPercentage, 
+    annualInterestRate, 
+    loanTermYears, 
+    loanFees, 
+    monthlyIncome, 
+    otherMonthlyDebt, 
+    propertyLoaded,
+    originalValues.purchasePrice,
+    originalValues.closingCosts,
+    originalValues.rehabCosts,
+    originalValues.afterRepairValue,
+    originalValues.interiorSqft,
+    originalValues.taxRate,
+    originalValues.propertyTaxesAnnual,
+    originalValues.insuranceCostsAnnual,
+    originalValues.hoaFeesAnnual,
+    originalValues.utilitiesCostsAnnual,
+    originalValues.accountingLegalFeesAnnual,
+    originalValues.otherHoldingFeesAnnual,
+    originalValues.downPaymentPercentage,
+    originalValues.annualInterestRate,
+    originalValues.loanTermYears,
+    originalValues.loanFees,
+    originalValues.monthlyIncome,
+    originalValues.otherMonthlyDebt
+  ]);
 
   // Error handling utility
   const handleError = (error: unknown, context: string) => {
@@ -454,6 +552,12 @@ export default function AnalyzePropertyPage() {
         utilitiesCostsAnnual,
         accountingLegalFeesAnnual,
         otherHoldingFeesAnnual,
+        downPaymentPercentage,
+        annualInterestRate,
+        loanTermYears,
+        loanFees,
+        monthlyIncome,
+        otherMonthlyDebt,
       });
       
       setHasChanges(false);
@@ -879,6 +983,292 @@ export default function AnalyzePropertyPage() {
                 />
               </div>
             </div>
+
+            {/* Loan Evaluation */}
+            {!showLoanEvaluation && (
+              <div className="px-4 pb-4 pt-4">
+                <button
+                  onClick={() => setShowLoanEvaluation(true)}
+                  className="flex min-w-[200px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-6 bg-[#0b80ee] text-white text-base font-bold leading-normal tracking-[0.015em] hover:bg-[#0a6fd8] transition-colors shadow-sm"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  <span className="truncate">Add Financing</span>
+                </button>
+              </div>
+            )}
+            
+            {showLoanEvaluation && (
+              <div>
+                {/* Financing Header */}
+                <h3 className="text-[#111518] text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4">Financing</h3>
+                <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="pb-2">
+                  <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
+                    Down Payment %
+                    <span className="relative group">
+                      <svg className="w-4 h-4 text-gray-400 ml-1 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                        Percentage of purchase price for down payment. Standard is 20% for conventional loans.
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                      </div>
+                    </span>
+                  </label>
+                  <input 
+                    type="number" 
+                    value={downPaymentPercentage}
+                    onChange={e => setDownPaymentPercentage(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
+                    placeholder="20"
+                  />
+                </div>
+                <div className="pb-2">
+                  <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
+                    Annual Interest Rate %
+                    <span className="relative group">
+                      <svg className="w-4 h-4 text-gray-400 ml-1 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                        Annual interest rate for the mortgage loan.
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                      </div>
+                    </span>
+                  </label>
+                  <input 
+                    type="number" 
+                    value={annualInterestRate}
+                    onChange={e => setAnnualInterestRate(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
+                    placeholder="7.5"
+                    step="0.1"
+                  />
+                </div>
+                <div className="pb-2">
+                  <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
+                    Loan Term (Years)
+                    <span className="relative group">
+                      <svg className="w-4 h-4 text-gray-400 ml-1 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                        Length of the mortgage loan in years.
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                      </div>
+                    </span>
+                  </label>
+                  <input 
+                    type="number" 
+                    value={loanTermYears}
+                    onChange={e => setLoanTermYears(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
+                    placeholder="30"
+                  />
+                </div>
+                <div className="pb-2">
+                  <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
+                    Closing Loan Fees
+                    <span className="relative group">
+                      <svg className="w-4 h-4 text-gray-400 ml-1 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                        Additional loan fees including origination, points, and other closing costs.
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                      </div>
+                    </span>
+                  </label>
+                  <input 
+                    type="number" 
+                    value={loanFees}
+                    onChange={e => setLoanFees(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
+                    placeholder="$0"
+                  />
+                </div>
+                <div className="pb-2">
+                  <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
+                    Other Monthly Income
+                    <span className="relative group">
+                      <svg className="w-4 h-4 text-gray-400 ml-1 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                        Other monthly income for debt-to-income ratio calculation.
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                      </div>
+                    </span>
+                  </label>
+                  <input 
+                    type="number" 
+                    value={monthlyIncome}
+                    onChange={e => setMonthlyIncome(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
+                    placeholder="$0"
+                  />
+                </div>
+                <div className="pb-2">
+                  <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
+                    Other Monthly Debt
+                    <span className="relative group">
+                      <svg className="w-4 h-4 text-gray-400 ml-1 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                        Other monthly debt payments for debt-to-income ratio calculation.
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                      </div>
+                    </span>
+                  </label>
+                  <input 
+                    type="number" 
+                    value={otherMonthlyDebt}
+                    onChange={e => setOtherMonthlyDebt(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
+                    placeholder="$0"
+                  />
+                </div>
+              </div>
+              
+              {/* Loan Analysis */}
+              <div className="p-4 bg-gray-50 rounded-lg mx-4 mb-4">
+                <h4 className="text-[#111518] text-base font-bold leading-tight tracking-[-0.015em] mb-3">Loan Analysis</h4>
+                <div className="space-y-4">
+                  {/* Loan Amount */}
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <div className="relative group">
+                        <svg className="w-4 h-4 text-gray-400 mr-2 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                          Total loan amount based on purchase price and down payment percentage
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                        </div>
+                      </div>
+                      <span className="text-[#111518] text-sm font-medium">Loan Amount</span>
+                    </div>
+                    <span className="text-[#111518] text-sm font-bold">{loanAmount.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: showDecimals ? 2 : 0, minimumFractionDigits: showDecimals ? 2 : 0 })}</span>
+                  </div>
+
+                  {/* Monthly Payment */}
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <div className="relative group">
+                        <svg className="w-4 h-4 text-gray-400 mr-2 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                          Monthly mortgage payment including principal and interest
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                        </div>
+                      </div>
+                      <span className="text-[#111518] text-sm font-medium">Monthly Payment</span>
+                    </div>
+                    <span className="text-[#111518] text-sm font-bold">{monthlyMortgagePayment.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: showDecimals ? 2 : 0, minimumFractionDigits: showDecimals ? 2 : 0 })}</span>
+                  </div>
+
+                  {/* Total Interest Paid */}
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <div className="relative group">
+                        <svg className="w-4 h-4 text-gray-400 mr-2 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                          Total interest paid over the life of the loan
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                        </div>
+                      </div>
+                      <span className="text-[#111518] text-sm font-medium">Total Interest Paid</span>
+                    </div>
+                    <span className="text-red-600 text-sm font-bold">{totalInterestPaid.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: showDecimals ? 2 : 0, minimumFractionDigits: showDecimals ? 2 : 0 })}</span>
+                  </div>
+
+                  {/* Total Loan Costs */}
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <div className="relative group">
+                        <svg className="w-4 h-4 text-gray-400 mr-2 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                          Total loan costs including interest and fees
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                        </div>
+                      </div>
+                      <span className="text-[#111518] text-sm font-medium">Total Loan Costs</span>
+                    </div>
+                    <span className="text-red-600 text-sm font-bold">{totalLoanCosts.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: showDecimals ? 2 : 0, minimumFractionDigits: showDecimals ? 2 : 0 })}</span>
+                  </div>
+
+                  {/* Loan-to-Value Ratio */}
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <div className="relative group">
+                        <svg className="w-4 h-4 text-gray-400 mr-2 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                          Loan amount divided by property value (purchase price)
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                        </div>
+                      </div>
+                      <span className="text-[#111518] text-sm font-medium">Loan-to-Value Ratio</span>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[#111518] text-sm font-bold">
+                        {(loanToValueRatio * 100).toFixed(1)}%
+                      </div>
+                      <div className={`text-xs ${loanToValueRatio <= 0.8 ? 'text-green-600' : 'text-red-600'}`}>
+                        {loanToValueRatio <= 0.8 ? 'GOOD' : 'HIGH'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Debt-to-Income Ratio */}
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <div className="relative group">
+                        <svg className="w-4 h-4 text-gray-400 mr-2 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                          Total monthly debt payments divided by monthly income
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                        </div>
+                      </div>
+                      <span className="text-[#111518] text-sm font-medium">Debt-to-Income Ratio</span>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[#111518] text-sm font-bold">
+                        {(debtToIncomeRatio * 100).toFixed(1)}%
+                      </div>
+                      <div className={`text-xs ${debtToIncomeRatio <= 0.43 ? 'text-green-600' : debtToIncomeRatio <= 0.5 ? 'text-yellow-600' : 'text-red-600'}`}>
+                        {debtToIncomeRatio <= 0.43 ? 'GOOD' : debtToIncomeRatio <= 0.5 ? 'ACCEPTABLE' : 'HIGH'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Cancel Financing Button */}
+              <div className="flex justify-end px-4 pb-4">
+                <button
+                  onClick={() => setShowLoanEvaluation(false)}
+                  className="flex items-center justify-center rounded-lg h-10 px-4 bg-gray-500 text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-gray-600 transition-colors shadow-sm"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  <span>Cancel Financing</span>
+                </button>
+              </div>
+              </div>
+            )}
 
             {/* Holding Costs */}
             <h3 className="text-[#111518] text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4">Holding Costs</h3>
@@ -1383,6 +1773,8 @@ export default function AnalyzePropertyPage() {
                 </div>
               </div>
             </div>
+
+
 
             {/* Disclosures */}
             <h3 className="text-[#111518] text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4">Disclosures</h3>
