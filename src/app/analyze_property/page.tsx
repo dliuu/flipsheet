@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth/useAuth';
 import { getPropertyImages } from '@/lib/read_property_images';
 import { writeFlipAnalysis, queryFlipAnalysis } from '@/lib/database';
 import { Property, PropertyImage } from '@/types/database';
+import { supabase } from '@/supabaseClient';
 import {
   calculateSellingCosts,
   calculateSaleProceeds,
@@ -25,6 +26,18 @@ function shouldShowDecimals(...values: number[]): boolean {
   return values.some(val => !Number.isInteger(val));
 }
 
+// Retry utility function with exponential backoff
+const retryWithBackoff = async (fn: () => Promise<unknown>, maxRetries = 3, delay = 1000) => {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (i === maxRetries - 1) throw error;
+      await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i)));
+    }
+  }
+};
+
 export default function AnalyzePropertyPage() {
   const searchParams = useSearchParams();
   const propertyParam = searchParams.get('property');
@@ -42,6 +55,9 @@ export default function AnalyzePropertyPage() {
   const [message, setMessage] = useState('');
   const [uploadedPhotos, setUploadedPhotos] = useState<File[]>([]);
   const [uploadedPhotoUrls, setUploadedPhotoUrls] = useState<string[]>([]);
+
+  // Add degraded mode state
+  const [isDegradedMode, setIsDegradedMode] = useState(false);
 
   // Editable property financial fields (default to property values or 0)
   const [purchasePrice, setPurchasePrice] = useState(property?.asking_price || 0);
@@ -199,6 +215,19 @@ export default function AnalyzePropertyPage() {
     checkConnection();
   }, []);
 
+  // Monitor authentication state changes
+  useEffect(() => {
+    const handleAuthStateChange = async () => {
+      // Re-check connection when auth state changes
+      await checkConnection();
+    };
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
+    
+    return () => subscription.unsubscribe();
+  }, []);
+
   useEffect(() => {
     const loadPropertyAndAnalysis = async () => {
       if (propertyParam) {
@@ -207,11 +236,14 @@ export default function AnalyzePropertyPage() {
           setProperty(propertyData);
           fetchPropertyImages(propertyData.id);
 
-          // Try to load flip_analysis for this property
-          let analysis = null;
+          // Try to load flip_analysis for this property with retry logic
+          let analysis: any = null;
           try {
-            analysis = await queryFlipAnalysis(propertyData.id);
+            analysis = await retryWithBackoff(async () => {
+              return await queryFlipAnalysis(propertyData.id);
+            });
           } catch (e) {
+            console.warn('Failed to load flip analysis after retries:', e);
             analysis = null;
           }
 
@@ -279,16 +311,32 @@ export default function AnalyzePropertyPage() {
     setHasChanges(changes);
   }, [purchasePrice, closingCosts, rehabCosts, afterRepairValue, interiorSqft, taxRate, propertyTaxesAnnual, insuranceCostsAnnual, hoaFeesAnnual, utilitiesCostsAnnual, accountingLegalFeesAnnual, otherHoldingFeesAnnual, originalValues, propertyLoaded]);
 
+  // Error handling utility
+  const handleError = (error: unknown, context: string) => {
+    console.warn(`${context} failed:`, error);
+    
+    // If it's an auth error, enable degraded mode
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('Failed to fetch') || errorMessage.includes('token')) {
+      setIsDegradedMode(true);
+    }
+  };
+
   const checkConnection = async () => {
     try {
-      const { session, error } = await getSession();
+      const result = await retryWithBackoff(async () => {
+        return await getSession();
+      }) as { session: any; error: any };
       
-      if (error) {
+      if (result.error) {
+        handleError(result.error, 'Connection check');
         setIsConnected(false);
       } else {
-        setIsConnected(!!session);
+        setIsConnected(!!result.session);
+        setIsDegradedMode(false); // Reset degraded mode on success
       }
     } catch (error) {
+      handleError(error, 'Connection check');
       setIsConnected(false);
     }
   };
@@ -298,12 +346,14 @@ export default function AnalyzePropertyPage() {
       setLoading(true);
       setError(null);
       
-      // Fetch property images
+      // Fetch property images with retry logic
       try {
-        const images = await getPropertyImages(propertyId);
+        const images = await retryWithBackoff(async () => {
+          return await getPropertyImages(propertyId);
+        }) as PropertyImage[];
         setPropertyImages(images);
       } catch (imageError) {
-        console.warn('Failed to load property images:', imageError);
+        console.warn('Failed to load property images after retries:', imageError);
         // Continue without images
       }
       
@@ -373,13 +423,15 @@ export default function AnalyzePropertyPage() {
     setSaveSuccess(false);
     
     try {
-      await writeFlipAnalysis(property.id, {
-        purchasePrice,
-        closingCosts,
-        rehabCosts,
-        afterRepairValue,
-        interiorSqft,
-        taxRate,
+      await retryWithBackoff(async () => {
+        return await writeFlipAnalysis(property.id, {
+          purchasePrice,
+          closingCosts,
+          rehabCosts,
+          afterRepairValue,
+          interiorSqft,
+          taxRate,
+        });
       });
       
       // Update original values to reflect saved state
@@ -403,8 +455,9 @@ export default function AnalyzePropertyPage() {
       
       // Hide success message after 3 seconds
       setTimeout(() => setSaveSuccess(false), 3000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving changes:', error);
+      handleError(error, 'Save changes');
       // You could add a toast notification here for error handling
     } finally {
       setIsSaving(false);
@@ -419,8 +472,11 @@ export default function AnalyzePropertyPage() {
       setSelectedImage((prevIndex) => (prevIndex + 1) % propertyImages.length);
     }, 7000);
 
-    return () => clearInterval(interval);
-  }, [propertyImages.length]);
+    // Clear interval when component unmounts or when images change
+    return () => {
+      clearInterval(interval);
+    };
+  }, [propertyImages.length, selectedImage]); // Add selectedImage to dependencies
 
   // Loading state
   if (loading) {
@@ -484,6 +540,24 @@ export default function AnalyzePropertyPage() {
               <p className="text-[#111518] text-base font-normal leading-normal pb-3 pt-1 px-4">
                 {property.description}
               </p>
+            )}
+
+            {/* Degraded Mode Warning */}
+            {isDegradedMode && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-4 mx-4">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-yellow-800">
+                      Connection issues detected. Some features may be limited. Please refresh the page if problems persist.
+                    </p>
+                  </div>
+                </div>
+              </div>
             )}
 
             {/* Summary */}
