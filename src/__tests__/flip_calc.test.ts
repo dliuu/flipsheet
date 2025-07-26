@@ -10,6 +10,12 @@ import {
   calculateRehabCost,
   calculatePostTaxProfit,
   calculate70PercentRule,
+  calculateLoanAmount,
+  calculateMonthlyMortgagePayment,
+  calculateTotalInterestPaid,
+  calculateTotalLoanCosts,
+  calculateLoanToValueRatio,
+  calculateDebtToIncomeRatio,
 } from '../lib/analysis_calculations/flip_calc';
 
 describe('flip_calc integration', () => {
@@ -77,5 +83,47 @@ describe('calculate70PercentRule', () => {
     const result = calculate70PercentRule(0, 0, 0);
     expect(result.maxPurchasePrice).toBe(0);
     expect(result.passes).toBe(true); // 0 <= 0
+  });
+});
+
+describe('financing calculations', () => {
+  it('calculates loan amount with default down payment percentage', () => {
+    expect(calculateLoanAmount(300000)).toBe(240000); // 300000 * (1 - 0.20)
+  });
+
+  it('calculates loan amount with custom down payment percentage', () => {
+    expect(calculateLoanAmount(300000, 0.25)).toBe(225000); // 300000 * (1 - 0.25)
+  });
+
+  it('calculates monthly mortgage payment', () => {
+    const payment = calculateMonthlyMortgagePayment(240000, 0.05, 30);
+    expect(payment).toBeCloseTo(1288.37, 1); // Approximate monthly payment for 240k loan at 5% for 30 years
+  });
+
+  it('calculates total interest paid', () => {
+    const totalInterest = calculateTotalInterestPaid(1288.37, 30, 240000);
+    expect(totalInterest).toBeCloseTo(223813.2, 0); // (1288.37 * 360) - 240000
+  });
+
+  it('calculates total loan costs', () => {
+    const totalCosts = calculateTotalLoanCosts(223813.2, 5000);
+    expect(totalCosts).toBe(228813.2); // 223813.2 + 5000
+  });
+
+  it('calculates loan-to-value ratio', () => {
+    expect(calculateLoanToValueRatio(240000, 300000)).toBe(0.8); // 240000 / 300000
+  });
+
+  it('calculates debt-to-income ratio', () => {
+    const dti = calculateDebtToIncomeRatio(500, 1288.37, 8000);
+    expect(dti).toBeCloseTo(0.2235, 3); // (500 + 1288.37) / 8000
+  });
+
+  it('handles zero values in loan calculations', () => {
+    expect(calculateLoanAmount(0)).toBe(0);
+    expect(calculateMonthlyMortgagePayment(0, 0.05, 30)).toBe(0);
+    expect(calculateTotalInterestPaid(0, 30, 0)).toBe(0);
+    expect(calculateLoanToValueRatio(0, 0)).toBe(0);
+    expect(calculateDebtToIncomeRatio(0, 0, 0)).toBe(0);
   });
 }); 

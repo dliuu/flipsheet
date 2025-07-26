@@ -84,6 +84,9 @@ export default function AnalyzePropertyPage() {
   const [monthlyIncome, setMonthlyIncome] = useState(0);
   const [otherMonthlyDebt, setOtherMonthlyDebt] = useState(0);
 
+  // Financing state
+  const [isFinancing, setIsFinancing] = useState(false);
+
   // Track original values to detect changes
   const [originalValues, setOriginalValues] = useState({
     purchasePrice: 0,
@@ -123,6 +126,7 @@ export default function AnalyzePropertyPage() {
   const [annualizedROI, setAnnualizedROI] = useState(0);
   const [postTaxProfit, setPostTaxProfit] = useState(0);
   const [holdingCosts, setHoldingCosts] = useState(0);
+  const [financingCosts, setFinancingCosts] = useState(0);
 
   // Metrics calculation results
   const [seventyPercentRule, setSeventyPercentRule] = useState({ maxPurchasePrice: 0, passes: false });
@@ -223,8 +227,23 @@ export default function AnalyzePropertyPage() {
     const _holdingCosts = (monthsHeld / 12) * annualSum;
     setHoldingCosts(_holdingCosts);
 
-    // Update total profit to subtract holding costs
-    const _totalProfit = calculateTotalProfit(_saleProceeds, _totalInvestment) - _holdingCosts;
+    // Calculate financing costs if financing is enabled
+    let _financingCosts = 0;
+    if (isFinancing) {
+      // Calculate total interest paid over the holding period
+      const _loanAmount = calculateLoanAmount(purchasePrice, downPaymentPercentage / 100);
+      const _monthlyMortgagePayment = calculateMonthlyMortgagePayment(_loanAmount, annualInterestRate / 100, loanTermYears);
+      const _totalInterestPaid = calculateTotalInterestPaid(_monthlyMortgagePayment, loanTermYears, _loanAmount);
+      
+      // Prorate interest and fees over the holding period
+      const interestPerMonth = _totalInterestPaid / (loanTermYears * 12);
+      const feesPerMonth = loanFees / (loanTermYears * 12);
+      _financingCosts = (interestPerMonth + feesPerMonth) * monthsHeld;
+    }
+    setFinancingCosts(_financingCosts);
+
+    // Update total profit to subtract holding costs and financing costs
+    const _totalProfit = calculateTotalProfit(_saleProceeds, _totalInvestment) - _holdingCosts - _financingCosts;
     setTotalProfit(_totalProfit);
 
     const _totalROI = calculateTotalROI(_totalProfit, _totalInvestment);
@@ -260,7 +279,7 @@ export default function AnalyzePropertyPage() {
 
     const _debtToIncomeRatio = calculateDebtToIncomeRatio(otherMonthlyDebt, _monthlyMortgagePayment, monthlyIncome);
     setDebtToIncomeRatio(_debtToIncomeRatio);
-  }, [purchasePrice, closingCosts, rehabCosts, afterRepairValue, interiorSqft, taxRate, property?.rehab_duration_months, monthsHeld, propertyTaxes, insuranceCosts, hoaFees, utilitiesCosts, accountingLegalFees, otherHoldingFees, downPaymentPercentage, annualInterestRate, loanTermYears, loanFees, monthlyIncome, otherMonthlyDebt]);
+  }, [purchasePrice, closingCosts, rehabCosts, afterRepairValue, interiorSqft, taxRate, property?.rehab_duration_months, monthsHeld, propertyTaxes, insuranceCosts, hoaFees, utilitiesCosts, accountingLegalFees, otherHoldingFees, downPaymentPercentage, annualInterestRate, loanTermYears, loanFees, monthlyIncome, otherMonthlyDebt, isFinancing]);
 
   // Check if current user is the property owner
   const isPropertyOwner = user && property && user.id === property.user_id;
@@ -375,6 +394,15 @@ export default function AnalyzePropertyPage() {
       otherMonthlyDebt !== originalValues.otherMonthlyDebt;
     
     setHasChanges(changes);
+    
+    // Check if financing inputs have been changed
+    const financingChanged = 
+      downPaymentPercentage !== originalValues.downPaymentPercentage ||
+      annualInterestRate !== originalValues.annualInterestRate ||
+      loanTermYears !== originalValues.loanTermYears ||
+      loanFees !== originalValues.loanFees;
+    
+    setIsFinancing(financingChanged);
   }, [
     purchasePrice, 
     closingCosts, 
@@ -561,6 +589,7 @@ export default function AnalyzePropertyPage() {
       });
       
       setHasChanges(false);
+      setIsFinancing(false); // Reset financing state when changes are saved
       setSaveSuccess(true);
       
       // Hide success message after 3 seconds
@@ -1003,6 +1032,35 @@ export default function AnalyzePropertyPage() {
               <div>
                 {/* Financing Header */}
                 <h3 className="text-[#111518] text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4">Financing</h3>
+                {/* Months Held Slider - Only show in financing section */}
+                <div className="px-4 pb-4 col-span-2">
+                  <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
+                    Months Held
+                    <span className="relative group">
+                      <svg className="w-4 h-4 text-gray-400 ml-1 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                        How many months you expect to hold the property before selling. Impacts holding costs and ROI calculations.
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                      </div>
+                    </span>
+                  </label>
+                  <div className="w-full bg-gray-50 border border-gray-200 rounded-lg p-4 flex flex-col md:flex-row md:items-center gap-4">
+                    <input
+                      type="range"
+                      min={0.5}
+                      max={24}
+                      step={0.5}
+                      value={monthsHeld}
+                      onChange={e => setMonthsHeld(Number(e.target.value))}
+                      className="w-full accent-blue-500 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-200 rounded-lg h-2"
+                      aria-label="Months Held"
+                      style={{ background: 'linear-gradient(90deg, #e0e7ef 0%, #f8fafc 100%)' }}
+                    />
+                    <span className="text-[#111518] text-sm font-medium w-24 text-center bg-white border border-gray-200 rounded-lg py-1 shadow-sm">{monthsHeld} months</span>
+                  </div>
+                </div>
                 <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="pb-2">
                   <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
@@ -1204,54 +1262,6 @@ export default function AnalyzePropertyPage() {
                     </div>
                     <span className="text-red-600 text-sm font-bold">{totalLoanCosts.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: showDecimals ? 2 : 0, minimumFractionDigits: showDecimals ? 2 : 0 })}</span>
                   </div>
-
-                  {/* Loan-to-Value Ratio */}
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center">
-                      <div className="relative group">
-                        <svg className="w-4 h-4 text-gray-400 mr-2 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                          Loan amount divided by property value (purchase price)
-                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
-                        </div>
-                      </div>
-                      <span className="text-[#111518] text-sm font-medium">Loan-to-Value Ratio</span>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-[#111518] text-sm font-bold">
-                        {(loanToValueRatio * 100).toFixed(1)}%
-                      </div>
-                      <div className={`text-xs ${loanToValueRatio <= 0.8 ? 'text-green-600' : 'text-red-600'}`}>
-                        {loanToValueRatio <= 0.8 ? 'GOOD' : 'HIGH'}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Debt-to-Income Ratio */}
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center">
-                      <div className="relative group">
-                        <svg className="w-4 h-4 text-gray-400 mr-2 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                          Total monthly debt payments divided by monthly income
-                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
-                        </div>
-                      </div>
-                      <span className="text-[#111518] text-sm font-medium">Debt-to-Income Ratio</span>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-[#111518] text-sm font-bold">
-                        {(debtToIncomeRatio * 100).toFixed(1)}%
-                      </div>
-                      <div className={`text-xs ${debtToIncomeRatio <= 0.43 ? 'text-green-600' : debtToIncomeRatio <= 0.5 ? 'text-yellow-600' : 'text-red-600'}`}>
-                        {debtToIncomeRatio <= 0.43 ? 'GOOD' : debtToIncomeRatio <= 0.5 ? 'ACCEPTABLE' : 'HIGH'}
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </div>
               
@@ -1272,35 +1282,37 @@ export default function AnalyzePropertyPage() {
 
             {/* Holding Costs */}
             <h3 className="text-[#111518] text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4">Holding Costs</h3>
-            {/* Months Held Slider */}
-            <div className="px-4 pb-4 col-span-2">
-              <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
-                Months Held
-                <span className="relative group">
-                  <svg className="w-4 h-4 text-gray-400 ml-1 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                    How many months you expect to hold the property before selling. Impacts holding costs and ROI calculations.
-                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
-                  </div>
-                </span>
-              </label>
-              <div className="w-full bg-gray-50 border border-gray-200 rounded-lg p-4 flex flex-col md:flex-row md:items-center gap-4">
-                <input
-                  type="range"
-                  min={0.5}
-                  max={24}
-                  step={0.5}
-                  value={monthsHeld}
-                  onChange={e => setMonthsHeld(Number(e.target.value))}
-                  className="w-full accent-blue-500 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-200 rounded-lg h-2"
-                  aria-label="Months Held"
-                  style={{ background: 'linear-gradient(90deg, #e0e7ef 0%, #f8fafc 100%)' }}
-                />
-                <span className="text-[#111518] text-sm font-medium w-24 text-center bg-white border border-gray-200 rounded-lg py-1 shadow-sm">{monthsHeld} months</span>
+            {/* Months Held Slider - Only show when financing is NOT active */}
+            {!showLoanEvaluation && (
+              <div className="px-4 pb-4 col-span-2">
+                <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
+                  Months Held
+                  <span className="relative group">
+                    <svg className="w-4 h-4 text-gray-400 ml-1 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                      How many months you expect to hold the property before selling. Impacts holding costs and ROI calculations.
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                    </div>
+                  </span>
+                </label>
+                <div className="w-full bg-gray-50 border border-gray-200 rounded-lg p-4 flex flex-col md:flex-row md:items-center gap-4">
+                  <input
+                    type="range"
+                    min={0.5}
+                    max={24}
+                    step={0.5}
+                    value={monthsHeld}
+                    onChange={e => setMonthsHeld(Number(e.target.value))}
+                    className="w-full accent-blue-500 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-200 rounded-lg h-2"
+                    aria-label="Months Held"
+                    style={{ background: 'linear-gradient(90deg, #e0e7ef 0%, #f8fafc 100%)' }}
+                  />
+                  <span className="text-[#111518] text-sm font-medium w-24 text-center bg-white border border-gray-200 rounded-lg py-1 shadow-sm">{monthsHeld} months</span>
+                </div>
               </div>
-            </div>
+            )}
             <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="pb-2">
                 <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
@@ -1632,6 +1644,25 @@ export default function AnalyzePropertyPage() {
                   <span className="text-red-600 text-sm font-bold">-{holdingCosts.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: showDecimals ? 2 : 0, minimumFractionDigits: showDecimals ? 2 : 0 })}</span>
                 </div>
 
+                {/* Financing Costs */}
+                {isFinancing && (
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <div className="relative group">
+                        <svg className="w-4 h-4 text-gray-400 mr-2 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                          Interest and loan fees prorated over the holding period
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                        </div>
+                      </div>
+                      <span className="text-[#111518] text-sm font-medium">Financing Costs</span>
+                    </div>
+                    <span className="text-red-600 text-sm font-bold">-{financingCosts.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: showDecimals ? 2 : 0, minimumFractionDigits: showDecimals ? 2 : 0 })}</span>
+                  </div>
+                )}
+
                 {/* Invested Capital */}
                 <div className="flex justify-between items-center">
                   <div className="flex items-center">
@@ -1768,6 +1799,110 @@ export default function AnalyzePropertyPage() {
                     </div>
                     <div className={`text-xs ${seventyPercentRule.passes ? 'text-green-600' : 'text-red-600'}`}>
                       {seventyPercentRule.passes ? 'PASSES' : `FAILS (${afterRepairValue > 0 ? ((purchasePrice / afterRepairValue) * 100 - 70).toFixed(1) : '0.0'}%)`}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Loan-to-Value Ratio */}
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center">
+                    <div className="flex items-center">
+                      {loanToValueRatio <= 0.8 ? (
+                        <div className="relative group">
+                          <svg className="w-5 h-5 text-green-500 mr-2 cursor-pointer" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                            Calculation: {loanAmount.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })} ÷ {purchasePrice.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })} = {(loanToValueRatio * 100).toFixed(1)}%
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="relative group">
+                          <svg className="w-5 h-5 text-red-500 mr-2 cursor-pointer" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                          </svg>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                            Calculation: {loanAmount.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })} ÷ {purchasePrice.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })} = {(loanToValueRatio * 100).toFixed(1)}%
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                          </div>
+                        </div>
+                      )}
+                      <span className="text-[#111518] text-sm font-medium">Loan-to-Value Ratio</span>
+                      <div className="relative group ml-2">
+                        <svg className="w-4 h-4 text-gray-400 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                          Loan Amount ÷ Purchase Price
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[#111518] text-sm font-bold">
+                      {(loanToValueRatio * 100).toFixed(1)}%
+                    </div>
+                    <div className={`text-xs ${loanToValueRatio <= 0.8 ? 'text-green-600' : 'text-red-600'}`}>
+                      {loanToValueRatio <= 0.8 ? 'GOOD' : 'HIGH'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Debt-to-Income Ratio */}
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center">
+                    <div className="flex items-center">
+                      {debtToIncomeRatio <= 0.43 ? (
+                        <div className="relative group">
+                          <svg className="w-5 h-5 text-green-500 mr-2 cursor-pointer" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                            Calculation: ({monthlyMortgagePayment.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })} + {otherMonthlyDebt.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })} ÷ {monthlyIncome.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })} = {(debtToIncomeRatio * 100).toFixed(1)}%
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                          </div>
+                        </div>
+                      ) : debtToIncomeRatio <= 0.5 ? (
+                        <div className="relative group">
+                          <svg className="w-5 h-5 text-yellow-500 mr-2 cursor-pointer" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                          </svg>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                            Calculation: ({monthlyMortgagePayment.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })} + {otherMonthlyDebt.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })} ÷ {monthlyIncome.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })} = {(debtToIncomeRatio * 100).toFixed(1)}%
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="relative group">
+                          <svg className="w-5 h-5 text-red-500 mr-2 cursor-pointer" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                          </svg>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                            Calculation: ({monthlyMortgagePayment.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })} + {otherMonthlyDebt.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })} ÷ {monthlyIncome.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })} = {(debtToIncomeRatio * 100).toFixed(1)}%
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                          </div>
+                        </div>
+                      )}
+                      <span className="text-[#111518] text-sm font-medium">Debt-to-Income Ratio</span>
+                      <div className="relative group ml-2">
+                        <svg className="w-4 h-4 text-gray-400 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                          (Mortgage + Other Debt) ÷ Monthly Income
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[#111518] text-sm font-bold">
+                      {(debtToIncomeRatio * 100).toFixed(1)}%
+                    </div>
+                    <div className={`text-xs ${debtToIncomeRatio <= 0.43 ? 'text-green-600' : debtToIncomeRatio <= 0.5 ? 'text-yellow-600' : 'text-red-600'}`}>
+                      {debtToIncomeRatio <= 0.43 ? 'GOOD' : debtToIncomeRatio <= 0.5 ? 'ACCEPTABLE' : 'HIGH'}
                     </div>
                   </div>
                 </div>
