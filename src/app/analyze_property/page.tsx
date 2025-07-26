@@ -16,9 +16,8 @@ import {
   calculateAnnualizedROI,
   calculateDownPayment,
   calculateCapitalNeeded,
-  calculateRehabDurationMonths,
-  calculateRehabCost,
   calculatePostTaxProfit,
+  calculate70PercentRule,
 } from '@/lib/analysis_calculations/flip_calc';
 
 // Utility to determine if any input has decimals
@@ -103,6 +102,9 @@ export default function AnalyzePropertyPage() {
   const [annualizedROI, setAnnualizedROI] = useState(0);
   const [postTaxProfit, setPostTaxProfit] = useState(0);
   const [holdingCosts, setHoldingCosts] = useState(0);
+
+  // Metrics calculation results
+  const [seventyPercentRule, setSeventyPercentRule] = useState({ maxPurchasePrice: 0, passes: false });
 
   // Add at the top, after other useState hooks
   const [propertyTaxesMode, setPropertyTaxesMode] = useState<'annual' | 'monthly'>('annual');
@@ -206,6 +208,10 @@ export default function AnalyzePropertyPage() {
 
     const _postTaxProfit = calculatePostTaxProfit(_totalProfit, taxRate);
     setPostTaxProfit(_postTaxProfit);
+
+    // Calculate 70% rule metric
+    const _seventyPercentRule = calculate70PercentRule(afterRepairValue, rehabCosts, purchasePrice);
+    setSeventyPercentRule(_seventyPercentRule);
   }, [purchasePrice, closingCosts, rehabCosts, afterRepairValue, interiorSqft, taxRate, property?.rehab_duration_months, monthsHeld, propertyTaxes, insuranceCosts, hoaFees, utilitiesCosts, accountingLegalFees, otherHoldingFees]);
 
   // Check if current user is the property owner
@@ -1322,6 +1328,59 @@ export default function AnalyzePropertyPage() {
                     <span className="truncate">Contact Seller</span>
                   </button>
                 )}
+              </div>
+            </div>
+
+            {/* Metrics */}
+            <h3 className="text-[#111518] text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4">Metrics</h3>
+            <div className="p-4 bg-gray-50 rounded-lg mx-4">
+              <div className="space-y-4">
+                {/* 70% Rule */}
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center">
+                    <div className="flex items-center">
+                      {seventyPercentRule.passes ? (
+                        <div className="relative group">
+                          <svg className="w-5 h-5 text-green-500 mr-2 cursor-pointer" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                            Calculation: ({afterRepairValue.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })} × 0.70) - {rehabCosts.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })} = {seventyPercentRule.maxPurchasePrice.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="relative group">
+                          <svg className="w-5 h-5 text-red-500 mr-2 cursor-pointer" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                          </svg>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                            Calculation: ({afterRepairValue.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })} × 0.70) - {rehabCosts.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })} = {seventyPercentRule.maxPurchasePrice.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                          </div>
+                        </div>
+                      )}
+                      <span className="text-[#111518] text-sm font-medium">70% Rule</span>
+                                              <div className="relative group ml-2">
+                          <svg className="w-4 h-4 text-gray-400 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                            (70 × ARV) - Repair Costs
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                          </div>
+                        </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[#111518] text-sm font-bold">
+                      {afterRepairValue > 0 ? ((purchasePrice / afterRepairValue) * 100).toFixed(1) : '0.0'}%
+                    </div>
+                    <div className={`text-xs ${seventyPercentRule.passes ? 'text-green-600' : 'text-red-600'}`}>
+                      {seventyPercentRule.passes ? 'PASSES' : `FAILS (${afterRepairValue > 0 ? ((purchasePrice / afterRepairValue) * 100 - 70).toFixed(1) : '0.0'}%)`}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 

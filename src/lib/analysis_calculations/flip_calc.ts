@@ -152,3 +152,25 @@ export function calculatePostTaxProfit(
 ): number {
   return totalProfit * (1 - taxRate);
 }
+
+/**
+ * Calculates the 70% rule metric for real estate investing.
+ * Formula: maxPurchasePrice = (ARV × 0.70) − estimatedRepairs
+ * @param afterRepairValue - After Repair Value (ARV)
+ * @param estimatedRepairs - Estimated repair costs
+ * @param actualPurchasePrice - Actual purchase price to compare against
+ * @returns Object containing max purchase price and whether the rule passes
+ */
+export function calculate70PercentRule(
+  afterRepairValue: number,
+  estimatedRepairs: number,
+  actualPurchasePrice: number
+): { maxPurchasePrice: number; passes: boolean } {
+  const maxPurchasePrice = (afterRepairValue * 0.70) - estimatedRepairs;
+  const passes = actualPurchasePrice <= maxPurchasePrice;
+  
+  return {
+    maxPurchasePrice,
+    passes
+  };
+}

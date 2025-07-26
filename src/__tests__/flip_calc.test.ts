@@ -9,6 +9,7 @@ import {
   calculateRehabDurationMonths,
   calculateRehabCost,
   calculatePostTaxProfit,
+  calculate70PercentRule,
 } from '../lib/analysis_calculations/flip_calc';
 
 describe('flip_calc integration', () => {
@@ -50,5 +51,31 @@ describe('flip_calc integration', () => {
 
   it('calculates post-tax profit with default tax rate', () => {
     expect(calculatePostTaxProfit(40000)).toBe(30000);
+  });
+});
+
+describe('calculate70PercentRule', () => {
+  it('should calculate max purchase price correctly', () => {
+    const result = calculate70PercentRule(200000, 30000, 120000);
+    expect(result.maxPurchasePrice).toBe(110000); // (200000 * 0.70) - 30000
+    expect(result.passes).toBe(false); // 120000 > 110000
+  });
+
+  it('should pass when purchase price is within 70% rule', () => {
+    const result = calculate70PercentRule(200000, 30000, 100000);
+    expect(result.maxPurchasePrice).toBe(110000); // (200000 * 0.70) - 30000
+    expect(result.passes).toBe(true); // 100000 <= 110000
+  });
+
+  it('should pass when purchase price equals max purchase price', () => {
+    const result = calculate70PercentRule(200000, 30000, 110000);
+    expect(result.maxPurchasePrice).toBe(110000);
+    expect(result.passes).toBe(true); // 110000 <= 110000
+  });
+
+  it('should handle zero values', () => {
+    const result = calculate70PercentRule(0, 0, 0);
+    expect(result.maxPurchasePrice).toBe(0);
+    expect(result.passes).toBe(true); // 0 <= 0
   });
 }); 
