@@ -9,8 +9,8 @@
     - [x] Calculation file to create calculations.
     - [x] Allow a user to create a flip_analysis.
     - [x] Read a flip analysis on the property_page load.
-    - [] Investor friendly rules and summaries at the end of flip analysis
-    - [] Enable financial projections
+    - [x] Investor friendly rules and summaries at the end of flip analysis
+    - [] Enable financing projections
     - [] General re-organization of the property page in both the edit and live modes.
 
 -   [] Create financial loan projections on a property

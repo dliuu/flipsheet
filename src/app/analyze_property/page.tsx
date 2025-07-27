@@ -81,6 +81,7 @@ export default function AnalyzePropertyPage() {
   const [annualInterestRate, setAnnualInterestRate] = useState(7.5); // Default 7.5%
   const [loanTermYears, setLoanTermYears] = useState(30); // Default 30 years
   const [loanFees, setLoanFees] = useState(0);
+  const [closingLoanFees, setClosingLoanFees] = useState(0);
   const [monthlyIncome, setMonthlyIncome] = useState(0);
   const [otherMonthlyDebt, setOtherMonthlyDebt] = useState(0);
 
@@ -105,6 +106,7 @@ export default function AnalyzePropertyPage() {
     annualInterestRate: 7.5,
     loanTermYears: 30,
     loanFees: 0,
+    closingLoanFees: 0,
     monthlyIncome: 0,
     otherMonthlyDebt: 0,
   });
@@ -213,13 +215,29 @@ export default function AnalyzePropertyPage() {
     const _saleProceeds = calculateSaleProceeds(afterRepairValue, _sellingCosts);
     setSaleProceeds(_saleProceeds);
 
-    const _totalInvestment = purchasePrice + closingCosts + rehabCosts;
-    setTotalInvestment(_totalInvestment);
-
-    const _downPayment = calculateDownPayment(purchasePrice);
+    const _downPayment = calculateDownPayment(purchasePrice, downPaymentPercentage / 100);
     setDownPayment(_downPayment);
 
-    const _capitalNeeded = calculateCapitalNeeded(_totalInvestment, _downPayment);
+    // Calculate invested capital based on financing status
+    let _totalInvestment;
+    if (isFinancing) {
+      // When using financing, invested capital is just the down payment
+      _totalInvestment = _downPayment;
+    } else {
+      // When not using financing, invested capital is the purchase price + closing costs (rehab costs are separate)
+      _totalInvestment = purchasePrice + closingCosts;
+    }
+    setTotalInvestment(_totalInvestment);
+
+    // Calculate capital needed based on financing status
+    let _capitalNeeded;
+    if (isFinancing) {
+      // When using financing, capital needed is just the down payment
+      _capitalNeeded = _downPayment;
+    } else {
+      // When not using financing, capital needed is the full purchase price
+      _capitalNeeded = purchasePrice;
+    }
     setCapitalNeeded(_capitalNeeded);
 
     // Calculate holding costs
@@ -230,20 +248,29 @@ export default function AnalyzePropertyPage() {
     // Calculate financing costs if financing is enabled
     let _financingCosts = 0;
     if (isFinancing) {
-      // Calculate total interest paid over the holding period
+      // Calculate total interest paid over the holding period using simple interest
       const _loanAmount = calculateLoanAmount(purchasePrice, downPaymentPercentage / 100);
-      const _monthlyMortgagePayment = calculateMonthlyMortgagePayment(_loanAmount, annualInterestRate / 100, loanTermYears);
-      const _totalInterestPaid = calculateTotalInterestPaid(_monthlyMortgagePayment, loanTermYears, _loanAmount);
+      const annualInterest = _loanAmount * (annualInterestRate / 100);
+      const totalInterestPaid = annualInterest * (monthsHeld / 12);
       
-      // Prorate interest and fees over the holding period
-      const interestPerMonth = _totalInterestPaid / (loanTermYears * 12);
-      const feesPerMonth = loanFees / (loanTermYears * 12);
-      _financingCosts = (interestPerMonth + feesPerMonth) * monthsHeld;
+      // Add loan fees and closing loan fees to the financing costs
+      _financingCosts = totalInterestPaid + loanFees + closingLoanFees;
     }
     setFinancingCosts(_financingCosts);
 
-    // Update total profit to subtract holding costs and financing costs
-    const _totalProfit = calculateTotalProfit(_saleProceeds, _totalInvestment) - _holdingCosts - _financingCosts;
+    // Calculate loan amount (needed for profit calculation)
+    const _loanAmount = calculateLoanAmount(purchasePrice, downPaymentPercentage / 100);
+    setLoanAmount(_loanAmount);
+
+    // Update total profit to subtract holding costs, financing costs, loan amount, and rehab costs
+    let _totalProfit;
+    if (isFinancing) {
+      // When financing, subtract loan amount, down payment, and rehab costs from sale proceeds
+      _totalProfit = _saleProceeds - _loanAmount - _downPayment - rehabCosts - _holdingCosts - _financingCosts;
+    } else {
+      // When not financing, subtract rehab costs from sale proceeds
+      _totalProfit = _saleProceeds - rehabCosts - _totalInvestment - _holdingCosts - _financingCosts;
+    }
     setTotalProfit(_totalProfit);
 
     const _totalROI = calculateTotalROI(_totalProfit, _totalInvestment);
@@ -261,17 +288,19 @@ export default function AnalyzePropertyPage() {
     const _seventyPercentRule = calculate70PercentRule(afterRepairValue, rehabCosts, purchasePrice);
     setSeventyPercentRule(_seventyPercentRule);
 
-    // Calculate loan metrics
-    const _loanAmount = calculateLoanAmount(purchasePrice, downPaymentPercentage / 100);
-    setLoanAmount(_loanAmount);
-
+    // Calculate remaining loan metrics (loan amount already calculated above)
     const _monthlyMortgagePayment = calculateMonthlyMortgagePayment(_loanAmount, annualInterestRate / 100, loanTermYears);
     setMonthlyMortgagePayment(_monthlyMortgagePayment);
 
-    const _totalInterestPaid = calculateTotalInterestPaid(_monthlyMortgagePayment, loanTermYears, _loanAmount);
+    // Calculate total interest paid using simple interest for display
+    let _totalInterestPaid = 0;
+    if (isFinancing) {
+      const annualInterest = _loanAmount * (annualInterestRate / 100);
+      _totalInterestPaid = annualInterest * (monthsHeld / 12);
+    }
     setTotalInterestPaid(_totalInterestPaid);
 
-    const _totalLoanCosts = calculateTotalLoanCosts(_totalInterestPaid, loanFees);
+    const _totalLoanCosts = calculateTotalLoanCosts(_totalInterestPaid, loanFees + closingLoanFees);
     setTotalLoanCosts(_totalLoanCosts);
 
     const _loanToValueRatio = calculateLoanToValueRatio(_loanAmount, purchasePrice);
@@ -279,7 +308,7 @@ export default function AnalyzePropertyPage() {
 
     const _debtToIncomeRatio = calculateDebtToIncomeRatio(otherMonthlyDebt, _monthlyMortgagePayment, monthlyIncome);
     setDebtToIncomeRatio(_debtToIncomeRatio);
-  }, [purchasePrice, closingCosts, rehabCosts, afterRepairValue, interiorSqft, taxRate, property?.rehab_duration_months, monthsHeld, propertyTaxes, insuranceCosts, hoaFees, utilitiesCosts, accountingLegalFees, otherHoldingFees, downPaymentPercentage, annualInterestRate, loanTermYears, loanFees, monthlyIncome, otherMonthlyDebt, isFinancing]);
+  }, [purchasePrice, closingCosts, rehabCosts, afterRepairValue, interiorSqft, taxRate, property?.rehab_duration_months, monthsHeld, propertyTaxes, insuranceCosts, hoaFees, utilitiesCosts, accountingLegalFees, otherHoldingFees, downPaymentPercentage, annualInterestRate, loanTermYears, loanFees, closingLoanFees, monthlyIncome, otherMonthlyDebt, isFinancing]);
 
   // Check if current user is the property owner
   const isPropertyOwner = user && property && user.id === property.user_id;
@@ -351,6 +380,7 @@ export default function AnalyzePropertyPage() {
             annualInterestRate: 7.5,
             loanTermYears: 30,
             loanFees: 0,
+            closingLoanFees: 0,
             monthlyIncome: 0,
             otherMonthlyDebt: 0,
           });
@@ -584,6 +614,7 @@ export default function AnalyzePropertyPage() {
         annualInterestRate,
         loanTermYears,
         loanFees,
+        closingLoanFees,
         monthlyIncome,
         otherMonthlyDebt,
       });
@@ -705,7 +736,7 @@ export default function AnalyzePropertyPage() {
                 <div className="grid grid-cols-2 gap-8">
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-[#111518] text-sm font-medium">Capital Needed</span>
+                      <span className="text-[#111518] text-sm font-medium">Cash Invested</span>
                       <span className="text-red-600 text-sm font-bold">{capitalNeeded.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: showDecimals ? 2 : 0, minimumFractionDigits: showDecimals ? 2 : 0 })}</span>
                     </div>
                     <div className="flex justify-between items-center">
@@ -1141,6 +1172,27 @@ export default function AnalyzePropertyPage() {
                   </label>
                   <input 
                     type="number" 
+                    value={closingLoanFees}
+                    onChange={e => setClosingLoanFees(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
+                    placeholder="$0"
+                  />
+                                  </div>
+                <div className="pb-2">
+                  <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
+                    Loan Fees
+                    <span className="relative group">
+                      <svg className="w-4 h-4 text-gray-400 ml-1 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                        Ongoing loan fees and charges
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                      </div>
+                    </span>
+                  </label>
+                  <input 
+                    type="number" 
                     value={loanFees}
                     onChange={e => setLoanFees(Number(e.target.value))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
@@ -1237,7 +1289,7 @@ export default function AnalyzePropertyPage() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                          Total interest paid over the life of the loan
+                          Interest paid over the holding period (Annual Interest Rate × Loan Amount × Months Held ÷ 12)
                           <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
                         </div>
                       </div>
@@ -1627,6 +1679,23 @@ export default function AnalyzePropertyPage() {
                   <span className="text-[#111518] text-sm font-bold">{saleProceeds.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: showDecimals ? 2 : 0, minimumFractionDigits: showDecimals ? 2 : 0 })}</span>
                 </div>
 
+                {/* Rehab Costs */}
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center">
+                    <div className="relative group">
+                      <svg className="w-4 h-4 text-gray-400 mr-2 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                        Renovation and repair costs
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                      </div>
+                    </div>
+                    <span className="text-[#111518] text-sm font-medium">Rehab Costs</span>
+                  </div>
+                  <span className="text-red-600 text-sm font-bold">-{rehabCosts.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: showDecimals ? 2 : 0, minimumFractionDigits: showDecimals ? 2 : 0 })}</span>
+                </div>
+
                 {/* Holding Costs */}
                 <div className="flex justify-between items-center">
                   <div className="flex items-center">
@@ -1653,7 +1722,7 @@ export default function AnalyzePropertyPage() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                          Interest and loan fees prorated over the holding period
+                          Interest, loan fees, and closing loan fees
                           <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
                         </div>
                       </div>
@@ -1671,14 +1740,36 @@ export default function AnalyzePropertyPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                        Purchase Price + Closing Costs + Rehab Costs + Other Purchasing Costs
+                        {isFinancing 
+                          ? `Down Payment (${downPaymentPercentage}% of Purchase Price)`
+                          : 'Purchase Price + Closing Costs + Other Purchasing Costs'
+                        }
                         <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
                       </div>
                     </div>
-                    <span className="text-[#111518] text-sm font-medium">Invested Capital</span>
+                    <span className="text-[#111518] text-sm font-medium">Cash Invested</span>
                   </div>
                   <span className="text-red-600 text-sm font-bold">{totalInvestment.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: showDecimals ? 2 : 0, minimumFractionDigits: showDecimals ? 2 : 0 })}</span>
                 </div>
+
+                {/* Loan Amount - only show when financing is enabled */}
+                {isFinancing && (
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <div className="relative group">
+                        <svg className="w-4 h-4 text-gray-400 mr-2 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                          Loan amount to be repaid from sale proceeds
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                        </div>
+                      </div>
+                      <span className="text-[#111518] text-sm font-medium">Loan Amount</span>
+                    </div>
+                    <span className="text-red-600 text-sm font-bold">-{loanAmount.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: showDecimals ? 2 : 0, minimumFractionDigits: showDecimals ? 2 : 0 })}</span>
+                  </div>
+                )}
 
                 {/* Divider */}
                 <div className="border-t border-gray-300 my-3"></div>
