@@ -24,6 +24,9 @@ import {
   calculateTotalLoanCosts,
   calculateLoanToValueRatio,
   calculateDebtToIncomeRatio,
+  calculateLoanToCostRatio,
+  calculateReturnOnEquity,
+  calculateBreakEvenAnalysis,
 } from '@/lib/analysis_calculations/flip_calc';
 
 // Utility to determine if any input has decimals
@@ -80,7 +83,9 @@ export default function AnalyzePropertyPage() {
   const [downPaymentPercentage, setDownPaymentPercentage] = useState(20); // Default 20%
   const [annualInterestRate, setAnnualInterestRate] = useState(7.5); // Default 7.5%
   const [loanTermYears, setLoanTermYears] = useState(30); // Default 30 years
-  const [loanFees, setLoanFees] = useState(0);
+  const [underwritingProcessingFees, setUnderwritingProcessingFees] = useState(0);
+  const [appraisalFee, setAppraisalFee] = useState(0);
+  const [projectedLoanExtensionFees, setProjectedLoanExtensionFees] = useState(0);
   const [closingLoanFees, setClosingLoanFees] = useState(0);
   const [monthlyIncome, setMonthlyIncome] = useState(0);
   const [otherMonthlyDebt, setOtherMonthlyDebt] = useState(0);
@@ -105,7 +110,9 @@ export default function AnalyzePropertyPage() {
     downPaymentPercentage: 20,
     annualInterestRate: 7.5,
     loanTermYears: 30,
-    loanFees: 0,
+    underwritingProcessingFees: 0,
+    appraisalFee: 0,
+    projectedLoanExtensionFees: 0,
     closingLoanFees: 0,
     monthlyIncome: 0,
     otherMonthlyDebt: 0,
@@ -140,6 +147,16 @@ export default function AnalyzePropertyPage() {
   const [totalLoanCosts, setTotalLoanCosts] = useState(0);
   const [loanToValueRatio, setLoanToValueRatio] = useState(0);
   const [debtToIncomeRatio, setDebtToIncomeRatio] = useState(0);
+
+  // New metrics calculation results
+  const [loanToCostRatio, setLoanToCostRatio] = useState(0);
+  const [returnOnEquity, setReturnOnEquity] = useState(0);
+  const [breakEvenAnalysis, setBreakEvenAnalysis] = useState({
+    breakEvenARV: 0,
+    rehabCostsMargin: 0,
+    holdingCostsMargin: 0,
+    financingCostsMargin: 0
+  });
 
   // Add at the top, after other useState hooks
   const [propertyTaxesMode, setPropertyTaxesMode] = useState<'annual' | 'monthly'>('annual');
@@ -253,8 +270,8 @@ export default function AnalyzePropertyPage() {
       const annualInterest = _loanAmount * (annualInterestRate / 100);
       const totalInterestPaid = annualInterest * (monthsHeld / 12);
       
-      // Add loan fees and closing loan fees to the financing costs
-      _financingCosts = totalInterestPaid + loanFees + closingLoanFees;
+      // Add all loan-related fees to the financing costs
+      _financingCosts = totalInterestPaid + underwritingProcessingFees + appraisalFee + projectedLoanExtensionFees + closingLoanFees;
     }
     setFinancingCosts(_financingCosts);
 
@@ -300,7 +317,7 @@ export default function AnalyzePropertyPage() {
     }
     setTotalInterestPaid(_totalInterestPaid);
 
-    const _totalLoanCosts = calculateTotalLoanCosts(_totalInterestPaid, loanFees + closingLoanFees);
+    const _totalLoanCosts = calculateTotalLoanCosts(_totalInterestPaid, underwritingProcessingFees + appraisalFee + projectedLoanExtensionFees + closingLoanFees);
     setTotalLoanCosts(_totalLoanCosts);
 
     const _loanToValueRatio = calculateLoanToValueRatio(_loanAmount, purchasePrice);
@@ -308,7 +325,28 @@ export default function AnalyzePropertyPage() {
 
     const _debtToIncomeRatio = calculateDebtToIncomeRatio(otherMonthlyDebt, _monthlyMortgagePayment, monthlyIncome);
     setDebtToIncomeRatio(_debtToIncomeRatio);
-  }, [purchasePrice, closingCosts, rehabCosts, afterRepairValue, interiorSqft, taxRate, property?.rehab_duration_months, monthsHeld, propertyTaxes, insuranceCosts, hoaFees, utilitiesCosts, accountingLegalFees, otherHoldingFees, downPaymentPercentage, annualInterestRate, loanTermYears, loanFees, closingLoanFees, monthlyIncome, otherMonthlyDebt, isFinancing]);
+
+    // Calculate new metrics
+    const _loanToCostRatio = calculateLoanToCostRatio(_loanAmount, purchasePrice, rehabCosts);
+    setLoanToCostRatio(_loanToCostRatio);
+
+    // Calculate cash invested (down payment + rehab costs + other costs)
+    const cashInvested = _downPayment + rehabCosts + closingCosts;
+    const _returnOnEquity = calculateReturnOnEquity(_totalProfit, cashInvested);
+    setReturnOnEquity(_returnOnEquity);
+
+    // Calculate break-even analysis
+    const _breakEvenAnalysis = calculateBreakEvenAnalysis(
+      afterRepairValue,
+      purchasePrice,
+      rehabCosts,
+      _holdingCosts,
+      _financingCosts,
+      _sellingCosts,
+      isFinancing
+    );
+    setBreakEvenAnalysis(_breakEvenAnalysis);
+  }, [purchasePrice, closingCosts, rehabCosts, afterRepairValue, interiorSqft, taxRate, property?.rehab_duration_months, monthsHeld, propertyTaxes, insuranceCosts, hoaFees, utilitiesCosts, accountingLegalFees, otherHoldingFees, downPaymentPercentage, annualInterestRate, loanTermYears, underwritingProcessingFees, appraisalFee, projectedLoanExtensionFees, closingLoanFees, monthlyIncome, otherMonthlyDebt, isFinancing]);
 
   // Check if current user is the property owner
   const isPropertyOwner = user && property && user.id === property.user_id;
@@ -379,7 +417,9 @@ export default function AnalyzePropertyPage() {
             downPaymentPercentage: 20,
             annualInterestRate: 7.5,
             loanTermYears: 30,
-            loanFees: 0,
+            underwritingProcessingFees: 0,
+            appraisalFee: 0,
+            projectedLoanExtensionFees: 0,
             closingLoanFees: 0,
             monthlyIncome: 0,
             otherMonthlyDebt: 0,
@@ -419,7 +459,9 @@ export default function AnalyzePropertyPage() {
       downPaymentPercentage !== originalValues.downPaymentPercentage ||
       annualInterestRate !== originalValues.annualInterestRate ||
       loanTermYears !== originalValues.loanTermYears ||
-      loanFees !== originalValues.loanFees ||
+      underwritingProcessingFees !== originalValues.underwritingProcessingFees ||
+      appraisalFee !== originalValues.appraisalFee ||
+      projectedLoanExtensionFees !== originalValues.projectedLoanExtensionFees ||
       monthlyIncome !== originalValues.monthlyIncome ||
       otherMonthlyDebt !== originalValues.otherMonthlyDebt;
     
@@ -430,7 +472,9 @@ export default function AnalyzePropertyPage() {
       downPaymentPercentage !== originalValues.downPaymentPercentage ||
       annualInterestRate !== originalValues.annualInterestRate ||
       loanTermYears !== originalValues.loanTermYears ||
-      loanFees !== originalValues.loanFees;
+      underwritingProcessingFees !== originalValues.underwritingProcessingFees ||
+      appraisalFee !== originalValues.appraisalFee ||
+      projectedLoanExtensionFees !== originalValues.projectedLoanExtensionFees;
     
     setIsFinancing(financingChanged);
   }, [
@@ -449,7 +493,9 @@ export default function AnalyzePropertyPage() {
     downPaymentPercentage, 
     annualInterestRate, 
     loanTermYears, 
-    loanFees, 
+    underwritingProcessingFees, 
+    appraisalFee, 
+    projectedLoanExtensionFees, 
     monthlyIncome, 
     otherMonthlyDebt, 
     propertyLoaded,
@@ -468,7 +514,9 @@ export default function AnalyzePropertyPage() {
     originalValues.downPaymentPercentage,
     originalValues.annualInterestRate,
     originalValues.loanTermYears,
-    originalValues.loanFees,
+    originalValues.underwritingProcessingFees,
+    originalValues.appraisalFee,
+    originalValues.projectedLoanExtensionFees,
     originalValues.monthlyIncome,
     originalValues.otherMonthlyDebt
   ]);
@@ -613,7 +661,9 @@ export default function AnalyzePropertyPage() {
         downPaymentPercentage,
         annualInterestRate,
         loanTermYears,
-        loanFees,
+        underwritingProcessingFees,
+        appraisalFee,
+        projectedLoanExtensionFees,
         closingLoanFees,
         monthlyIncome,
         otherMonthlyDebt,
@@ -1180,21 +1230,63 @@ export default function AnalyzePropertyPage() {
                                   </div>
                 <div className="pb-2">
                   <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
-                    Loan Fees
+                    Underwriting/Processing Fees
                     <span className="relative group">
                       <svg className="w-4 h-4 text-gray-400 ml-1 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                        Ongoing loan fees and charges
+                        Fees for loan underwriting and processing
                         <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
                       </div>
                     </span>
                   </label>
                   <input 
                     type="number" 
-                    value={loanFees}
-                    onChange={e => setLoanFees(Number(e.target.value))}
+                    value={underwritingProcessingFees}
+                    onChange={e => setUnderwritingProcessingFees(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
+                    placeholder="$0"
+                  />
+                </div>
+                <div className="pb-2">
+                  <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
+                    Appraisal Fee
+                    <span className="relative group">
+                      <svg className="w-4 h-4 text-gray-400 ml-1 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                        Property appraisal fee
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                      </div>
+                    </span>
+                  </label>
+                  <input 
+                    type="number" 
+                    value={appraisalFee}
+                    onChange={e => setAppraisalFee(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
+                    placeholder="$0"
+                  />
+                </div>
+                <div className="pb-2">
+                  <label className="text-[#60768a] text-sm font-normal leading-normal mb-1 block flex items-center gap-1">
+                    Projected Loan Extension Fees
+                    <span className="relative group">
+                      <svg className="w-4 h-4 text-gray-400 ml-1 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                        Projected fees for loan extensions if needed
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                      </div>
+                    </span>
+                  </label>
+                  <input 
+                    type="number" 
+                    value={projectedLoanExtensionFees}
+                    onChange={e => setProjectedLoanExtensionFees(Number(e.target.value))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-[#111518] text-sm"
                     placeholder="$0"
                   />
@@ -1245,7 +1337,7 @@ export default function AnalyzePropertyPage() {
               
               {/* Loan Analysis */}
               <div className="p-4 bg-gray-50 rounded-lg mx-4 mb-4">
-                <h4 className="text-[#111518] text-base font-bold leading-tight tracking-[-0.015em] mb-3">Loan Analysis</h4>
+                <h4 className="text-[#111518] text-base font-bold leading-tight tracking-[-0.015em] mb-3">Financing Analysis</h4>
                 <div className="space-y-4">
                   {/* Loan Amount */}
                   <div className="flex justify-between items-center">
@@ -1994,6 +2086,157 @@ export default function AnalyzePropertyPage() {
                     </div>
                     <div className={`text-xs ${debtToIncomeRatio <= 0.43 ? 'text-green-600' : debtToIncomeRatio <= 0.5 ? 'text-yellow-600' : 'text-red-600'}`}>
                       {debtToIncomeRatio <= 0.43 ? 'GOOD' : debtToIncomeRatio <= 0.5 ? 'ACCEPTABLE' : 'HIGH'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Loan-to-Cost Ratio */}
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center">
+                    <div className="flex items-center">
+                      {loanToCostRatio <= 0.75 ? (
+                        <div className="relative group">
+                          <svg className="w-5 h-5 text-green-500 mr-2 cursor-pointer" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                            Calculation: {loanAmount.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })} ÷ ({purchasePrice.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })} + {rehabCosts.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}) = {(loanToCostRatio * 100).toFixed(1)}%
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="relative group">
+                          <svg className="w-5 h-5 text-red-500 mr-2 cursor-pointer" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                          </svg>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                            Calculation: {loanAmount.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })} ÷ ({purchasePrice.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })} + {rehabCosts.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}) = {(loanToCostRatio * 100).toFixed(1)}%
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                          </div>
+                        </div>
+                      )}
+                      <span className="text-[#111518] text-sm font-medium">Loan-to-Cost Ratio</span>
+                      <div className="relative group ml-2">
+                        <svg className="w-4 h-4 text-gray-400 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                          Loan Amount ÷ (Purchase Price + Rehab Costs)
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[#111518] text-sm font-bold">
+                      {(loanToCostRatio * 100).toFixed(1)}%
+                    </div>
+                    <div className={`text-xs ${loanToCostRatio <= 0.75 ? 'text-green-600' : 'text-red-600'}`}>
+                      {loanToCostRatio <= 0.75 ? 'GOOD' : 'HIGH'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Return on Equity */}
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center">
+                    <div className="flex items-center">
+                      {returnOnEquity >= 0.15 ? (
+                        <div className="relative group">
+                          <svg className="w-5 h-5 text-green-500 mr-2 cursor-pointer" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                            Calculation: {totalProfit.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })} ÷ {(downPayment + rehabCosts + closingCosts).toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })} = {(returnOnEquity * 100).toFixed(1)}%
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="relative group">
+                          <svg className="w-5 h-5 text-red-500 mr-2 cursor-pointer" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                          </svg>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                            Calculation: {totalProfit.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })} ÷ {(downPayment + rehabCosts + closingCosts).toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })} = {(returnOnEquity * 100).toFixed(1)}%
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                          </div>
+                        </div>
+                      )}
+                      <span className="text-[#111518] text-sm font-medium">Return on Equity</span>
+                      <div className="relative group ml-2">
+                        <svg className="w-4 h-4 text-gray-400 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                          Total Profit ÷ Cash Invested
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[#111518] text-sm font-bold">
+                      {(returnOnEquity * 100).toFixed(1)}%
+                    </div>
+                    <div className={`text-xs ${returnOnEquity >= 0.15 ? 'text-green-600' : 'text-red-600'}`}>
+                      {returnOnEquity >= 0.15 ? 'GOOD' : 'LOW'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Break-Even Analysis */}
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center">
+                    <div className="flex items-center">
+                      {breakEvenAnalysis.breakEvenARV < afterRepairValue ? (
+                        <div className="relative group">
+                          <svg className="w-5 h-5 text-green-500 mr-2 cursor-pointer" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                            Break-even ARV: {breakEvenAnalysis.breakEvenARV.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}
+                            <br />
+                            Rehab Costs Margin: {breakEvenAnalysis.rehabCostsMargin.toFixed(1)}%
+                            <br />
+                            Holding Costs Margin: {breakEvenAnalysis.holdingCostsMargin.toFixed(1)}%
+                            {isFinancing && <><br />Financing Costs Margin: {breakEvenAnalysis.financingCostsMargin.toFixed(1)}%</>}
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="relative group">
+                          <svg className="w-5 h-5 text-red-500 mr-2 cursor-pointer" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                          </svg>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                            Break-even ARV: {breakEvenAnalysis.breakEvenARV.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}
+                            <br />
+                            Rehab Costs Margin: {breakEvenAnalysis.rehabCostsMargin.toFixed(1)}%
+                            <br />
+                            Holding Costs Margin: {breakEvenAnalysis.holdingCostsMargin.toFixed(1)}%
+                            {isFinancing && <><br />Financing Costs Margin: {breakEvenAnalysis.financingCostsMargin.toFixed(1)}%</>}
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                          </div>
+                        </div>
+                      )}
+                      <span className="text-[#111518] text-sm font-medium">Break-Even Analysis</span>
+                      <div className="relative group ml-2">
+                        <svg className="w-4 h-4 text-gray-400 cursor-pointer hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                          ARV where profit = 0 and cost variation margins
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[#111518] text-sm font-bold">
+                      {breakEvenAnalysis.breakEvenARV.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}
+                    </div>
+                    <div className={`text-xs ${breakEvenAnalysis.breakEvenARV < afterRepairValue ? 'text-green-600' : 'text-red-600'}`}>
+                      {breakEvenAnalysis.breakEvenARV < afterRepairValue ? 'PROFITABLE' : 'AT RISK'}
                     </div>
                   </div>
                 </div>

@@ -280,3 +280,94 @@ export function calculateDebtToIncomeRatio(
   if (monthlyIncome === 0) return 0;
   return (monthlyDebtPayments + monthlyMortgagePayment) / monthlyIncome;
 }
+
+/**
+ * Calculates the Loan-to-Cost (LTC) ratio.
+ * Formula: ltc = loanAmount / (purchasePrice + rehabCosts)
+ * @param loanAmount - Total loan amount
+ * @param purchasePrice - Property purchase price
+ * @param rehabCosts - Total rehabilitation costs
+ * @returns LTC as a decimal (e.g., 0.75 for 75%)
+ */
+export function calculateLoanToCostRatio(
+  loanAmount: number,
+  purchasePrice: number,
+  rehabCosts: number
+): number {
+  const totalCost = purchasePrice + rehabCosts;
+  if (totalCost === 0) return 0;
+  return loanAmount / totalCost;
+}
+
+/**
+ * Calculates the Return on Equity (ROE).
+ * Formula: roe = totalProfit / cashInvested
+ * @param totalProfit - Total profit from the deal
+ * @param cashInvested - Total cash invested (down payment + rehab costs + other costs)
+ * @returns ROE as a decimal (e.g., 0.25 for 25%)
+ */
+export function calculateReturnOnEquity(
+  totalProfit: number,
+  cashInvested: number
+): number {
+  if (cashInvested === 0) return 0;
+  return totalProfit / cashInvested;
+}
+
+/**
+ * Calculates the break-even analysis and margin of error.
+ * @param afterRepairValue - After Repair Value (ARV)
+ * @param purchasePrice - Property purchase price
+ * @param rehabCosts - Total rehabilitation costs
+ * @param holdingCosts - Total holding costs
+ * @param financingCosts - Total financing costs (0 if not financing)
+ * @param sellingCosts - Total selling costs
+ * @param isFinancing - Whether financing is being used
+ * @returns Object containing break-even ARV and margin of error percentages
+ */
+export function calculateBreakEvenAnalysis(
+  afterRepairValue: number,
+  purchasePrice: number,
+  rehabCosts: number,
+  holdingCosts: number,
+  financingCosts: number,
+  sellingCosts: number,
+  isFinancing: boolean
+): {
+  breakEvenARV: number;
+  rehabCostsMargin: number;
+  holdingCostsMargin: number;
+  financingCostsMargin: number;
+} {
+  // Calculate total costs
+  const totalCosts = purchasePrice + rehabCosts + holdingCosts + (isFinancing ? financingCosts : 0) + sellingCosts;
+  
+  // Break-even ARV is the total costs (since profit = ARV - totalCosts, so 0 = ARV - totalCosts)
+  const breakEvenARV = totalCosts;
+  
+  // Calculate margins of error
+  // How much can each cost component increase before we break even?
+  const currentProfit = afterRepairValue - totalCosts;
+  
+  // If we're already at a loss, margins are 0
+  if (currentProfit <= 0) {
+    return {
+      breakEvenARV,
+      rehabCostsMargin: 0,
+      holdingCostsMargin: 0,
+      financingCostsMargin: 0
+    };
+  }
+  
+  // Calculate how much each component can increase by the current profit amount
+  const rehabCostsMargin = rehabCosts > 0 ? (currentProfit / rehabCosts) * 100 : 0;
+  const holdingCostsMargin = holdingCosts > 0 ? (currentProfit / holdingCosts) * 100 : 0;
+  const financingCostsMargin = isFinancing && financingCosts > 0 ? (currentProfit / financingCosts) * 100 : 0;
+  
+  return {
+    breakEvenARV,
+    rehabCostsMargin,
+    holdingCostsMargin,
+    financingCostsMargin
+  };
+}
